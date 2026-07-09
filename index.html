@@ -100,6 +100,32 @@ On the next day, upload the same radiograph files again. Previously saved record
 
   <div class="viewer-box">
     <p id="imageProgress">No image loaded</p>
+    <div class="progress-dashboard">
+  <div>
+    <span class="progress-label">Saved</span>
+    <strong id="savedImageCount">0</strong>
+  </div>
+
+  <div>
+    <span class="progress-label">Remaining</span>
+    <strong id="remainingImageCount">0</strong>
+  </div>
+
+  <div>
+    <span class="progress-label">Current Image</span>
+    <strong id="currentSaveStatus">Not saved</strong>
+  </div>
+</div>
+
+<div class="jump-row">
+  <input 
+    type="number" 
+    id="jumpImageNumber" 
+    min="1" 
+    placeholder="Jump to image number, e.g. 250" 
+  />
+  <button type="button" id="jumpImageBtn">Jump</button>
+</div>
 
     <img id="radiographImage" alt="Radiograph preview" />
 
