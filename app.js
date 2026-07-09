@@ -2,10 +2,11 @@ let imageFiles = [];
 let currentImageIndex = 0;
 
 document.addEventListener("DOMContentLoaded", function () {
-    const jsStatus = document.getElementById("jsStatus");
+  const jsStatus = document.getElementById("jsStatus");
   if (jsStatus) {
     jsStatus.textContent = "JavaScript status: loaded";
   }
+
   const imageUpload = document.getElementById("imageUpload");
   const prevImageBtn = document.getElementById("prevImageBtn");
   const nextImageBtn = document.getElementById("nextImageBtn");
@@ -36,15 +37,18 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   if (saveButton) {
-    saveButton.addEventListener("click", saveAssessment);
+    saveButton.addEventListener("click", function () {
+      saveAssessment(true);
+    });
   }
-    if (saveNextBtn) {
-  saveNextBtn.addEventListener("click", saveAndNextImage);
-}
 
-if (nextUnsavedBtn) {
-  nextUnsavedBtn.addEventListener("click", goToNextUnsavedImage);
-}
+  if (saveNextBtn) {
+    saveNextBtn.addEventListener("click", saveAndNextImage);
+  }
+
+  if (nextUnsavedBtn) {
+    nextUnsavedBtn.addEventListener("click", goToNextUnsavedImage);
+  }
 
   if (exportCsvBtn) {
     exportCsvBtn.addEventListener("click", exportAssessmentsAsCSV);
@@ -97,12 +101,11 @@ function showCurrentImage() {
 
   const file = imageFiles[currentImageIndex];
   const imageUrl = URL.createObjectURL(file);
+  const imageId = getImageIdFromFileName(file.name);
 
   const radiographImage = document.getElementById("radiographImage");
   const imageProgress = document.getElementById("imageProgress");
   const imageIdInput = document.getElementById("imageId");
-
-  const imageId = getImageIdFromFileName(file.name);
 
   if (radiographImage) {
     radiographImage.src = imageUrl;
@@ -151,7 +154,7 @@ function showNextImage() {
   }
 }
 
-function saveAssessment(showAlert = true) {
+function saveAssessment(showAlert) {
   const assessment = {
     evaluator_id: getValue("evaluatorId"),
     participant_id: getValue("participantId"),
@@ -210,10 +213,93 @@ function saveAssessment(showAlert = true) {
   updateProgressDashboard();
 
   if (showAlert) {
-  alert("Assessment saved successfully. Total saved records: " + existingData.length);
+    alert("Assessment saved successfully. Total saved records: " + existingData.length);
+  }
+
+  return true;
 }
 
-return true;
+function saveAndNextImage() {
+  const saved = saveAssessment(false);
+
+  if (!saved) {
+    return;
+  }
+
+  if (imageFiles.length === 0) {
+    return;
+  }
+
+  if (currentImageIndex < imageFiles.length - 1) {
+    currentImageIndex++;
+    showCurrentImage();
+  } else {
+    updateProgressDashboard();
+    alert("Assessment saved. This is the last image.");
+  }
+}
+
+function goToNextUnsavedImage() {
+  if (imageFiles.length === 0) {
+    alert("Please upload radiograph images first.");
+    return;
+  }
+
+  const evaluatorId = getValue("evaluatorId");
+
+  if (!evaluatorId) {
+    alert("Please complete Evaluator ID first.");
+    return;
+  }
+
+  const existingData = JSON.parse(localStorage.getItem("radiograph_assessments")) || [];
+
+  const savedImageIds = new Set(
+    existingData
+      .filter(function (record) {
+        return record.evaluator_id === evaluatorId;
+      })
+      .map(function (record) {
+        return record.image_id;
+      })
+  );
+
+  for (let step = 1; step <= imageFiles.length; step++) {
+    const nextIndex = (currentImageIndex + step) % imageFiles.length;
+    const nextImageId = getImageIdFromFileName(imageFiles[nextIndex].name);
+
+    if (!savedImageIds.has(nextImageId)) {
+      currentImageIndex = nextIndex;
+      showCurrentImage();
+      return;
+    }
+  }
+
+  alert("All uploaded images have been saved for this Evaluator ID.");
+}
+
+function jumpToImage() {
+  if (imageFiles.length === 0) {
+    alert("Please upload radiograph images first.");
+    return;
+  }
+
+  const jumpInput = document.getElementById("jumpImageNumber");
+
+  if (!jumpInput) {
+    alert("Jump input not found.");
+    return;
+  }
+
+  const imageNumber = Number(jumpInput.value);
+
+  if (!imageNumber || imageNumber < 1 || imageNumber > imageFiles.length) {
+    alert("Please enter a valid image number between 1 and " + imageFiles.length + ".");
+    return;
+  }
+
+  currentImageIndex = imageNumber - 1;
+  showCurrentImage();
 }
 
 function loadExistingAssessmentForCurrentImage() {
@@ -495,24 +581,6 @@ function updateProgressDashboard() {
   }
 }
 
-function jumpToImage() {
-  if (imageFiles.length === 0) {
-    alert("Please upload radiograph images first.");
-    return;
-  }
-
-  const jumpInput = document.getElementById("jumpImageNumber");
-  const imageNumber = Number(jumpInput.value);
-
-  if (!imageNumber || imageNumber < 1 || imageNumber > imageFiles.length) {
-    alert("Please enter a valid image number between 1 and " + imageFiles.length + ".");
-    return;
-  }
-
-  currentImageIndex = imageNumber - 1;
-  showCurrentImage();
-}
-
 function getValue(id) {
   const element = document.getElementById(id);
   return element ? element.value.trim() : "";
@@ -523,62 +591,4 @@ function setValue(id, value) {
   if (element) {
     element.value = value || "";
   }
-
-    function saveAndNextImage() {
-  const saved = saveAssessment(false);
-
-  if (!saved) {
-    return;
-  }
-
-  if (imageFiles.length === 0) {
-    return;
-  }
-
-  if (currentImageIndex < imageFiles.length - 1) {
-    currentImageIndex++;
-    showCurrentImage();
-  } else {
-    updateProgressDashboard();
-    alert("Assessment saved. This is the last image.");
-  }
-}
-
-function goToNextUnsavedImage() {
-  if (imageFiles.length === 0) {
-    alert("Please upload radiograph images first.");
-    return;
-  }
-
-  const existingData = JSON.parse(localStorage.getItem("radiograph_assessments")) || [];
-  const evaluatorId = getValue("evaluatorId");
-
-  if (!evaluatorId) {
-    alert("Please complete Evaluator ID first.");
-    return;
-  }
-
-  const savedImageIds = new Set(
-    existingData
-      .filter(function (record) {
-        return record.evaluator_id === evaluatorId;
-      })
-      .map(function (record) {
-        return record.image_id;
-      })
-  );
-
-  for (let step = 1; step <= imageFiles.length; step++) {
-    const nextIndex = (currentImageIndex + step) % imageFiles.length;
-    const nextImageId = getImageIdFromFileName(imageFiles[nextIndex].name);
-
-    if (!savedImageIds.has(nextImageId)) {
-      currentImageIndex = nextIndex;
-      showCurrentImage();
-      return;
-    }
-  }
-
-  alert("All uploaded images have been saved for this Evaluator ID.");
-}
 }
