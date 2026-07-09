@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const prevImageBtn = document.getElementById("prevImageBtn");
   const nextImageBtn = document.getElementById("nextImageBtn");
   const saveButton = document.getElementById("saveAssessmentBtn");
+  const jumpImageBtn = document.getElementById("jumpImageBtn");
   const exportCsvBtn = document.getElementById("exportCsvBtn");
 const clearDataBtn = document.getElementById("clearDataBtn");
   const exportBackupBtn = document.getElementById("exportBackupBtn");
@@ -26,6 +27,9 @@ const backupFileInput = document.getElementById("backupFileInput");
 
   if (saveButton) {
     saveButton.addEventListener("click", saveAssessment);
+    if (jumpImageBtn) {
+  jumpImageBtn.addEventListener("click", jumpToImage);
+}
   }
   if (exportCsvBtn) {
   exportCsvBtn.addEventListener("click", exportAssessmentsAsCSV);
@@ -94,6 +98,7 @@ function showCurrentImage() {
 
   loadExistingAssessmentForCurrentImage();
 }
+updateProgressDashboard();
 
 function getImageIdFromFileName(fileName) {
   return fileName.replace(/\.[^/.]+$/, "");
@@ -169,6 +174,7 @@ saveObserverInfo();
   localStorage.setItem("radiograph_assessments", JSON.stringify(existingData));
 
   updateSavedCount();
+  updateProgressDashboard();
   alert("Assessment saved successfully. Total saved records: " + existingData.length);
 }
 
@@ -394,5 +400,72 @@ function importBackupJSON(event) {
   };
 
   reader.readAsText(file);
+}
+
+  function updateProgressDashboard() {
+  const existingData = JSON.parse(localStorage.getItem("radiograph_assessments")) || [];
+  const evaluatorId = getValue("evaluatorId");
+
+  let savedForEvaluator = existingData;
+
+  if (evaluatorId) {
+    savedForEvaluator = existingData.filter(function (record) {
+      return record.evaluator_id === evaluatorId;
+    });
+  }
+
+  const savedImageIds = new Set(
+    savedForEvaluator.map(function (record) {
+      return record.image_id;
+    })
+  );
+
+  const savedCount = savedImageIds.size;
+  const totalImages = imageFiles.length;
+  const remainingCount = totalImages > 0 ? Math.max(totalImages - savedCount, 0) : 0;
+
+  const savedImageCountElement = document.getElementById("savedImageCount");
+  const remainingImageCountElement = document.getElementById("remainingImageCount");
+  const currentSaveStatusElement = document.getElementById("currentSaveStatus");
+
+  if (savedImageCountElement) {
+    savedImageCountElement.textContent = savedCount;
+  }
+
+  if (remainingImageCountElement) {
+    remainingImageCountElement.textContent = remainingCount;
+  }
+
+  if (currentSaveStatusElement) {
+    const currentImageId = getValue("imageId");
+    const isCurrentSaved = savedImageIds.has(currentImageId);
+
+    if (isCurrentSaved) {
+      currentSaveStatusElement.textContent = "Saved";
+      currentSaveStatusElement.className = "saved";
+    } else {
+      currentSaveStatusElement.textContent = "Not saved";
+      currentSaveStatusElement.className = "unsaved";
+    }
+  }
+}
+
+function jumpToImage() {
+  if (imageFiles.length === 0) {
+    alert("Please upload radiograph images first.");
+    return;
+  }
+
+  const jumpInput = document.getElementById("jumpImageNumber");
+  const imageNumber = Number(jumpInput.value);
+
+  if (!imageNumber || imageNumber < 1 || imageNumber > imageFiles.length) {
+    alert("Please enter a valid image number between 1 and " + imageFiles.length + ".");
+    return;
+  }
+
+  currentImageIndex = imageNumber - 1;
+  clearAssessmentFields();
+  showCurrentImage();
 }
 }
