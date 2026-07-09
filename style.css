@@ -581,3 +581,30 @@ button:focus-visible {
 .danger-button:hover {
   background: linear-gradient(135deg, #9f1239, #450a0a) !important;
 }
+
+/* Final radiograph viewer fix */
+#radiographImage {
+  display: none !important;
+  width: auto !important;
+  height: auto !important;
+  max-width: 100% !important;
+  max-height: 460px !important;
+  object-fit: contain !important;
+  margin: 14px auto !important;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  background: #020617;
+}
+
+#radiographImage.has-image {
+  display: block !important;
+}
+
+.viewer-box {
+  overflow: hidden !important;
+}
+
+#imageProgress {
+  font-weight: bold;
+  color: #312e81;
+}
