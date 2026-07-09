@@ -143,10 +143,32 @@ On the next day, upload the same radiograph files again. Previously saved record
     <img id="radiographImage" alt="Radiograph preview" />
 
     <div class="button-row action-grid">
-  <button type="button" id="saveAssessmentBtn">Save Assessment</button>
-  <button type="button" id="saveNextBtn">Save & Next</button>
-  <button type="button" id="nextUnsavedBtn">Next Unsaved Image</button>
-  <button type="button" id="exportCsvBtn">Export CSV</button>
+<div class="workflow-panel">
+  <h3>Workflow Controls</h3>
+
+  <div class="button-row action-grid">
+    <button type="button" id="saveAssessmentBtn">Save Assessment</button>
+    <button type="button" id="saveNextBtn">Save & Next</button>
+    <button type="button" id="nextUnsavedBtn">Next Unsaved Image</button>
+    <button type="button" id="exportCsvBtn">Export CSV</button>
+  </div>
+
+  <details class="data-tools">
+    <summary>Data management tools</summary>
+
+    <div class="button-row action-grid">
+      <button type="button" id="exportBackupBtn">Export Backup JSON</button>
+      <button type="button" id="importBackupBtn">Import Backup JSON</button>
+      <button type="button" id="clearDataBtn" class="danger-button">Clear Saved Data</button>
+    </div>
+
+    <input type="file" id="backupFileInput" accept=".json" style="display: none;" />
+
+    <p id="savedCount" class="small-note">
+      Saved records: 0
+    </p>
+  </details>
+</div>
 </div>
   </div>
 </section>
@@ -242,29 +264,8 @@ On the next day, upload the same radiograph files again. Previously saved record
           <label for="comment">Comment / Remark</label>
           <textarea id="comment" rows="4" placeholder="Optional notes about image quality, canal visibility, root morphology, or uncertainty"></textarea>
         </div>
-      </div>
 
-      <br />
 
-      <div class="button-row">
-  <button type="button" id="saveAssessmentBtn">Save Assessment</button>
-  <button type="button" id="exportCsvBtn">Export CSV</button>
-</div>
-
-<div class="button-row">
-  <button type="button" id="exportBackupBtn">Export Backup JSON</button>
-  <button type="button" id="importBackupBtn">Import Backup JSON</button>
-</div>
-
-<input type="file" id="backupFileInput" accept=".json" style="display: none;" />
-</div>
-
-<p id="savedCount" class="small-note">
-  Saved records: 0
-</p>
-
-<button type="button" id="clearDataBtn" class="danger-button">
-  Clear Saved Data
 </button>
     </section>
 
