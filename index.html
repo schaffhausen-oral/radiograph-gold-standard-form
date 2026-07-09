@@ -60,15 +60,27 @@
     </section>
 
     <section class="card">
-      <h2>Radiograph Upload</h2>
+  <h2>Radiograph Viewer</h2>
 
-      <label for="imageUpload">Insert Radiograph Images</label>
-      <input type="file" id="imageUpload" accept="image/*" multiple />
+  <label for="imageUpload">Insert Radiograph Images</label>
+  <input type="file" id="imageUpload" accept="image/*" multiple />
 
-      <p class="small-note">
-        You will later be able to insert up to 1000 de-identified panoramic radiographs.
-      </p>
-    </section>
+  <p class="small-note">
+    Select all de-identified radiograph images. Image ID will be automatically generated from the file name.
+    Example: IMG_0001.png → IMG_0001
+  </p>
+
+  <div class="viewer-box">
+    <p id="imageProgress">No image loaded</p>
+
+    <img id="radiographImage" alt="Radiograph preview" />
+
+    <div class="button-row">
+      <button type="button" id="prevImageBtn">Previous Image</button>
+      <button type="button" id="nextImageBtn">Next Image</button>
+    </div>
+  </div>
+</section>
 
     <section class="card">
       <h2>Assessment Form</h2>
@@ -76,7 +88,7 @@
       <div class="form-grid">
         <div>
           <label for="imageId">Image ID</label>
-          <input type="text" id="imageId" placeholder="Example: IMG_0001" />
+          <input type="text" id="imageId" placeholder="Auto-generated from file name" readonly />
         </div>
 
         <div>
