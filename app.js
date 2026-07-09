@@ -342,6 +342,13 @@ function clearAssessmentFields() {
 }
 
 function exportAssessmentsAsCSV() {
+    const exportConfirmed = confirm(
+    "Are you sure you want to export the CSV file? Please confirm that this evaluator's data is ready to send to the principal investigator."
+  );
+
+  if (!exportConfirmed) {
+    return;
+  }
   const existingData = JSON.parse(localStorage.getItem("radiograph_assessments")) || [];
 
   if (existingData.length === 0) {
@@ -413,9 +420,22 @@ function escapeCSV(value) {
 }
 
 function clearSavedData() {
-  const confirmed = confirm(
-    "This will delete all saved assessment data from this browser. Export CSV or Backup JSON first before clearing. Continue?"
+  const typedConfirmation = prompt(
+    "Are you sure you want to delete all saved assessment data from this browser?\n\nThis action cannot be undone.\n\nType DELETE to confirm."
   );
+
+  if (typedConfirmation !== "DELETE") {
+    alert("Clear saved data was cancelled.");
+    return;
+  }
+
+  localStorage.removeItem("radiograph_assessments");
+
+  updateSavedCount();
+  updateProgressDashboard();
+
+  alert("Saved data cleared. Saved records: 0");
+}
 
   if (!confirmed) {
     return;
