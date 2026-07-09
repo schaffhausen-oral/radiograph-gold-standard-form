@@ -10,6 +10,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const prevImageBtn = document.getElementById("prevImageBtn");
   const nextImageBtn = document.getElementById("nextImageBtn");
   const saveButton = document.getElementById("saveAssessmentBtn");
+  const saveNextBtn = document.getElementById("saveNextBtn");
+  const nextUnsavedBtn = document.getElementById("nextUnsavedBtn");
   const exportCsvBtn = document.getElementById("exportCsvBtn");
   const clearDataBtn = document.getElementById("clearDataBtn");
   const exportBackupBtn = document.getElementById("exportBackupBtn");
@@ -36,6 +38,13 @@ document.addEventListener("DOMContentLoaded", function () {
   if (saveButton) {
     saveButton.addEventListener("click", saveAssessment);
   }
+    if (saveNextBtn) {
+  saveNextBtn.addEventListener("click", saveAndNextImage);
+}
+
+if (nextUnsavedBtn) {
+  nextUnsavedBtn.addEventListener("click", goToNextUnsavedImage);
+}
 
   if (exportCsvBtn) {
     exportCsvBtn.addEventListener("click", exportAssessmentsAsCSV);
@@ -142,7 +151,7 @@ function showNextImage() {
   }
 }
 
-function saveAssessment() {
+function saveAssessment(showAlert = true) {
   const assessment = {
     evaluator_id: getValue("evaluatorId"),
     participant_id: getValue("participantId"),
@@ -164,17 +173,17 @@ function saveAssessment() {
 
   if (!assessment.evaluator_id) {
     alert("Please complete Evaluator ID before saving.");
-    return;
+    return false;
   }
 
   if (!assessment.image_id) {
     alert("Please upload/select a radiograph image before saving.");
-    return;
+    return false;
   }
 
   if (!assessment.target_tooth) {
     alert("Please select Target Tooth before saving.");
-    return;
+    return false;
   }
 
   saveObserverInfo();
@@ -200,7 +209,11 @@ function saveAssessment() {
   updateSavedCount();
   updateProgressDashboard();
 
+  if (showAlert) {
   alert("Assessment saved successfully. Total saved records: " + existingData.length);
+}
+
+return true;
 }
 
 function loadExistingAssessmentForCurrentImage() {
@@ -510,4 +523,62 @@ function setValue(id, value) {
   if (element) {
     element.value = value || "";
   }
+
+    function saveAndNextImage() {
+  const saved = saveAssessment(false);
+
+  if (!saved) {
+    return;
+  }
+
+  if (imageFiles.length === 0) {
+    return;
+  }
+
+  if (currentImageIndex < imageFiles.length - 1) {
+    currentImageIndex++;
+    showCurrentImage();
+  } else {
+    updateProgressDashboard();
+    alert("Assessment saved. This is the last image.");
+  }
+}
+
+function goToNextUnsavedImage() {
+  if (imageFiles.length === 0) {
+    alert("Please upload radiograph images first.");
+    return;
+  }
+
+  const existingData = JSON.parse(localStorage.getItem("radiograph_assessments")) || [];
+  const evaluatorId = getValue("evaluatorId");
+
+  if (!evaluatorId) {
+    alert("Please complete Evaluator ID first.");
+    return;
+  }
+
+  const savedImageIds = new Set(
+    existingData
+      .filter(function (record) {
+        return record.evaluator_id === evaluatorId;
+      })
+      .map(function (record) {
+        return record.image_id;
+      })
+  );
+
+  for (let step = 1; step <= imageFiles.length; step++) {
+    const nextIndex = (currentImageIndex + step) % imageFiles.length;
+    const nextImageId = getImageIdFromFileName(imageFiles[nextIndex].name);
+
+    if (!savedImageIds.has(nextImageId)) {
+      currentImageIndex = nextIndex;
+      showCurrentImage();
+      return;
+    }
+  }
+
+  alert("All uploaded images have been saved for this Evaluator ID.");
+}
 }
