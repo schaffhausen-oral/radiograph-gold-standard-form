@@ -92,6 +92,10 @@
   <p class="small-note">
     Select all de-identified radiograph images. Image ID will be automatically generated from the file name.
     Example: IMG_0001.png → IMG_0001
+    <br />
+<strong>Resume instruction:</strong>
+If the evaluation cannot be completed in one day, use the same computer and same browser.
+On the next day, upload the same radiograph files again. Previously saved records will be restored automatically by Image ID.
   </p>
 
   <div class="viewer-box">
@@ -204,6 +208,14 @@
       <div class="button-row">
   <button type="button" id="saveAssessmentBtn">Save Assessment</button>
   <button type="button" id="exportCsvBtn">Export CSV</button>
+</div>
+
+<div class="button-row">
+  <button type="button" id="exportBackupBtn">Export Backup JSON</button>
+  <button type="button" id="importBackupBtn">Import Backup JSON</button>
+</div>
+
+<input type="file" id="backupFileInput" accept=".json" style="display: none;" />
 </div>
 
 <p id="savedCount" class="small-note">
