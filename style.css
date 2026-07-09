@@ -382,3 +382,51 @@ button:focus-visible {
     transform: none;
   }
 }
+
+/* Force small logo at top-left corner */
+.app-header {
+  position: relative;
+  min-height: 220px;
+  padding: 42px 28px 36px;
+}
+
+.brand-row {
+  display: block;
+  padding-left: 76px;
+  min-height: 56px;
+}
+
+.app-logo {
+  position: absolute !important;
+  top: 20px !important;
+  left: 24px !important;
+
+  width: 52px !important;
+  height: 52px !important;
+  max-width: 52px !important;
+  max-height: 52px !important;
+
+  object-fit: contain !important;
+  border-radius: 12px;
+  padding: 5px;
+
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.25);
+  backdrop-filter: blur(10px);
+}
+
+@media (max-width: 768px) {
+  .brand-row {
+    padding-left: 62px;
+  }
+
+  .app-logo {
+    width: 42px !important;
+    height: 42px !important;
+    max-width: 42px !important;
+    max-height: 42px !important;
+    top: 18px !important;
+    left: 18px !important;
+  }
+}
