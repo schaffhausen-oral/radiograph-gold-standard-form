@@ -264,6 +264,12 @@
   </main>
 
   <p id="jsStatus" class="small-note">JavaScript status: not loaded</p>
-<script src="./app.js?v=stable-001"></script>
+
+  <script>
+    document.getElementById("jsStatus").textContent = "Inline JavaScript works, waiting for app.js";
+  </script>
+
+  <script src="app.js?v=final-003"></script>
 </body>
 </html>
+
