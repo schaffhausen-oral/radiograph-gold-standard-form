@@ -540,3 +540,44 @@ button:focus-visible {
     grid-template-columns: 1fr;
   }
 }
+
+.workflow-panel {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #eef2ff, #eff6ff);
+  border: 1px solid #c4b5fd;
+}
+
+.workflow-panel h3 {
+  margin: 0 0 12px;
+  color: #312e81;
+  font-size: 16px;
+}
+
+.data-tools {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid #dbeafe;
+}
+
+.data-tools summary {
+  cursor: pointer;
+  font-weight: bold;
+  color: #312e81;
+  margin-bottom: 10px;
+}
+
+.data-tools .button-row {
+  margin-top: 12px;
+}
+
+.danger-button {
+  background: linear-gradient(135deg, #be123c, #7f1d1d) !important;
+}
+
+.danger-button:hover {
+  background: linear-gradient(135deg, #9f1239, #450a0a) !important;
+}
