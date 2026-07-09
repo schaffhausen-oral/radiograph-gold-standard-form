@@ -4,9 +4,170 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Radiograph Gold Standard Form</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
-  <h1>Radiograph Gold Standard Form</h1>
-  <p>Expert Observer Assessment for Impacted Mandibular Third Molars</p>
+  <header class="app-header">
+    <h1>Radiograph Gold Standard Form</h1>
+    <p>Expert Observer Assessment for Impacted Mandibular Third Molars</p>
+  </header>
+
+  <main class="container">
+
+    <section class="card">
+      <h2>Project Information</h2>
+      <p>
+        This web form is designed for expert observers to evaluate panoramic radiographs
+        of impacted mandibular third molars and record standardized assessment data
+        for gold standard establishment.
+      </p>
+      <p class="small-note">
+        Note: Do not upload identifiable patient information or real clinical images to a public GitHub repository.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>Observer Information</h2>
+
+      <div class="form-grid">
+        <div>
+          <label for="evaluatorId">Evaluator ID</label>
+          <input type="text" id="evaluatorId" placeholder="Example: E01" />
+        </div>
+
+        <div>
+          <label for="participantId">Participant ID</label>
+          <input type="text" id="participantId" placeholder="Example: P01" />
+        </div>
+
+        <div>
+          <label for="experienceYears">Years of Experience</label>
+          <input type="number" id="experienceYears" placeholder="Example: 7" />
+        </div>
+
+        <div>
+          <label for="specialty">Specialty</label>
+          <select id="specialty">
+            <option value="">Select specialty</option>
+            <option value="OMFS">Oral and Maxillofacial Surgery</option>
+            <option value="Radiology">Dental Radiology</option>
+            <option value="General Dentistry">General Dentistry</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Radiograph Upload</h2>
+
+      <label for="imageUpload">Insert Radiograph Images</label>
+      <input type="file" id="imageUpload" accept="image/*" multiple />
+
+      <p class="small-note">
+        You will later be able to insert up to 1000 de-identified panoramic radiographs.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>Assessment Form</h2>
+
+      <div class="form-grid">
+        <div>
+          <label for="imageId">Image ID</label>
+          <input type="text" id="imageId" placeholder="Example: IMG_0001" />
+        </div>
+
+        <div>
+          <label for="targetTooth">Target Tooth</label>
+          <select id="targetTooth">
+            <option value="">Select tooth</option>
+            <option value="38">38</option>
+            <option value="48">48</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="imageQuality">Image Quality</label>
+          <select id="imageQuality">
+            <option value="">Select quality</option>
+            <option value="Adequate">Adequate</option>
+            <option value="Limited but assessable">Limited but assessable</option>
+            <option value="Poor">Poor</option>
+            <option value="Cannot determine">Cannot determine</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="angulation">Angulation</label>
+          <select id="angulation">
+            <option value="">Select angulation</option>
+            <option value="Mesioangular">Mesioangular</option>
+            <option value="Horizontal">Horizontal</option>
+            <option value="Vertical">Vertical</option>
+            <option value="Distoangular">Distoangular</option>
+            <option value="Other">Other</option>
+            <option value="Cannot determine">Cannot determine</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="pellRamus">Pell & Gregory Ramus</label>
+          <select id="pellRamus">
+            <option value="">Select class</option>
+            <option value="Class I">Class I</option>
+            <option value="Class II">Class II</option>
+            <option value="Class III">Class III</option>
+            <option value="Cannot determine">Cannot determine</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="pellDepth">Pell & Gregory Depth</label>
+          <select id="pellDepth">
+            <option value="">Select position</option>
+            <option value="Position A">Position A</option>
+            <option value="Position B">Position B</option>
+            <option value="Position C">Position C</option>
+            <option value="Cannot determine">Cannot determine</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="ianRisk">Overall IAN Risk</label>
+          <select id="ianRisk">
+            <option value="">Select risk</option>
+            <option value="Low">Low</option>
+            <option value="Moderate">Moderate</option>
+            <option value="High">High</option>
+            <option value="Cannot determine">Cannot determine</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="confidenceScore">Confidence Score</label>
+          <select id="confidenceScore">
+            <option value="">Select score</option>
+            <option value="1">1 - Very low confidence</option>
+            <option value="2">2 - Low confidence</option>
+            <option value="3">3 - Moderate confidence</option>
+            <option value="4">4 - High confidence</option>
+            <option value="5">5 - Very high confidence</option>
+          </select>
+        </div>
+
+        <div class="full-width">
+          <label for="comment">Comment / Remark</label>
+          <textarea id="comment" rows="4" placeholder="Optional notes about image quality, canal visibility, root morphology, or uncertainty"></textarea>
+        </div>
+      </div>
+
+      <br />
+
+      <button type="button">Save Assessment</button>
+    </section>
+
+  </main>
 </body>
 </html>
