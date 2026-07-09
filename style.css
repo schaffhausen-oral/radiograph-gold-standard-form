@@ -523,3 +523,20 @@ button:focus-visible {
     grid-template-columns: 1fr;
   }
 }
+.action-grid {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+#saveNextBtn {
+  background: linear-gradient(135deg, #7c3aed, #2563eb);
+}
+
+#nextUnsavedBtn {
+  background: linear-gradient(135deg, #0f766e, #2563eb);
+}
+
+@media (max-width: 768px) {
+  .action-grid {
+    grid-template-columns: 1fr;
+  }
+}
