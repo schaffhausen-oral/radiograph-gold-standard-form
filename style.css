@@ -471,3 +471,55 @@ button:focus-visible {
 .button-row {
   max-width: 100% !important;
 }
+
+.progress-dashboard {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.progress-dashboard div {
+  background: linear-gradient(135deg, #eef2ff, #dbeafe);
+  border: 1px solid #c4b5fd;
+  border-radius: 14px;
+  padding: 12px;
+  text-align: center;
+}
+
+.progress-label {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.progress-dashboard strong {
+  color: #312e81;
+  font-size: 18px;
+}
+
+.jump-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+#currentSaveStatus.saved {
+  color: #166534;
+}
+
+#currentSaveStatus.unsaved {
+  color: #be123c;
+}
+
+@media (max-width: 768px) {
+  .progress-dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .jump-row {
+    grid-template-columns: 1fr;
+  }
+}
