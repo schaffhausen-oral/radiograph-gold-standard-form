@@ -6,6 +6,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const prevImageBtn = document.getElementById("prevImageBtn");
   const nextImageBtn = document.getElementById("nextImageBtn");
   const saveButton = document.getElementById("saveAssessmentBtn");
+  const exportCsvBtn = document.getElementById("exportCsvBtn");
+const clearDataBtn = document.getElementById("clearDataBtn");
 
   if (imageUpload) {
     imageUpload.addEventListener("change", handleImageUpload);
@@ -22,6 +24,15 @@ document.addEventListener("DOMContentLoaded", function () {
   if (saveButton) {
     saveButton.addEventListener("click", saveAssessment);
   }
+  if (exportCsvBtn) {
+  exportCsvBtn.addEventListener("click", exportAssessmentsAsCSV);
+}
+
+if (clearDataBtn) {
+  clearDataBtn.addEventListener("click", clearSavedData);
+}
+
+updateSavedCount();
 });
 
 function handleImageUpload(event) {
@@ -137,6 +148,7 @@ function saveAssessment() {
 
   localStorage.setItem("radiograph_assessments", JSON.stringify(existingData));
 
+  updateSavedCount();
   alert("Assessment saved successfully. Total saved records: " + existingData.length);
 }
 
@@ -189,4 +201,83 @@ function setValue(id, value) {
   if (element) {
     element.value = value || "";
   }
+
+  function exportAssessmentsAsCSV() {
+  const existingData = JSON.parse(localStorage.getItem("radiograph_assessments")) || [];
+
+  if (existingData.length === 0) {
+    alert("No saved assessment data to export.");
+    return;
+  }
+
+  const headers = [
+    "evaluator_id",
+    "participant_id",
+    "experience_years",
+    "specialty",
+    "image_id",
+    "target_tooth",
+    "image_quality",
+    "angulation",
+    "pell_ramus",
+    "pell_depth",
+    "overall_ian_risk",
+    "confidence_score",
+    "comment",
+    "saved_at"
+  ];
+
+  const csvRows = [];
+  csvRows.push(headers.join(","));
+
+  existingData.forEach(function (record) {
+    const row = headers.map(function (header) {
+      return escapeCSV(record[header] || "");
+    });
+
+    csvRows.push(row.join(","));
+  });
+
+  const csvContent = csvRows.join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+
+  const evaluatorId = getValue("evaluatorId") || "unknown_evaluator";
+  const today = new Date().toISOString().slice(0, 10);
+  const fileName = evaluatorId + "_radiograph_assessment_" + today + ".csv";
+
+  const downloadLink = document.createElement("a");
+  downloadLink.href = URL.createObjectURL(blob);
+  downloadLink.download = fileName;
+  downloadLink.click();
+
+  URL.revokeObjectURL(downloadLink.href);
+}
+
+function escapeCSV(value) {
+  const stringValue = String(value).replace(/"/g, '""');
+  return '"' + stringValue + '"';
+}
+
+function clearSavedData() {
+  const confirmed = confirm(
+    "This will delete all saved assessment data from this browser. Export CSV first before clearing. Continue?"
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  localStorage.removeItem("radiograph_assessments");
+  updateSavedCount();
+  alert("Saved data cleared.");
+}
+
+function updateSavedCount() {
+  const existingData = JSON.parse(localStorage.getItem("radiograph_assessments")) || [];
+  const savedCount = document.getElementById("savedCount");
+
+  if (savedCount) {
+    savedCount.textContent = "Saved records: " + existingData.length;
+  }
+}
 }
