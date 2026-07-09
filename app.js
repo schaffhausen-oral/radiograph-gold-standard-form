@@ -8,6 +8,9 @@ document.addEventListener("DOMContentLoaded", function () {
   const saveButton = document.getElementById("saveAssessmentBtn");
   const exportCsvBtn = document.getElementById("exportCsvBtn");
 const clearDataBtn = document.getElementById("clearDataBtn");
+  const exportBackupBtn = document.getElementById("exportBackupBtn");
+const importBackupBtn = document.getElementById("importBackupBtn");
+const backupFileInput = document.getElementById("backupFileInput");
 
   if (imageUpload) {
     imageUpload.addEventListener("change", handleImageUpload);
@@ -31,6 +34,21 @@ const clearDataBtn = document.getElementById("clearDataBtn");
 if (clearDataBtn) {
   clearDataBtn.addEventListener("click", clearSavedData);
 }
+  if (exportBackupBtn) {
+  exportBackupBtn.addEventListener("click", exportBackupJSON);
+}
+
+if (importBackupBtn) {
+  importBackupBtn.addEventListener("click", function () {
+    backupFileInput.click();
+  });
+}
+
+if (backupFileInput) {
+  backupFileInput.addEventListener("change", importBackupJSON);
+}
+
+restoreObserverInfo();
 
 updateSavedCount();
 });
@@ -109,23 +127,25 @@ function showNextImage() {
 
 function saveAssessment() {
   const assessment = {
-    evaluator_id: getValue("evaluatorId"),
-    participant_id: getValue("participantId"),
-    experience_years: getValue("experienceYears"),
-    specialty: getValue("specialty"),
+  evaluator_id: getValue("evaluatorId"),
+  participant_id: getValue("participantId"),
+  experience_years: getValue("experienceYears"),
+  specialty: getValue("specialty"),
 
-    image_id: getValue("imageId"),
-    target_tooth: getValue("targetTooth"),
-    image_quality: getValue("imageQuality"),
-    angulation: getValue("angulation"),
-    pell_ramus: getValue("pellRamus"),
-    pell_depth: getValue("pellDepth"),
-    overall_ian_risk: getValue("ianRisk"),
-    confidence_score: getValue("confidenceScore"),
-    comment: getValue("comment"),
+  image_id: getValue("imageId"),
+  target_tooth: getValue("targetTooth"),
+  image_quality: getValue("imageQuality"),
+  angulation: getValue("angulation"),
+  pell_ramus: getValue("pellRamus"),
+  pell_depth: getValue("pellDepth"),
+  overall_ian_risk: getValue("ianRisk"),
+  confidence_score: getValue("confidenceScore"),
+  comment: getValue("comment"),
 
-    saved_at: new Date().toISOString()
-  };
+  saved_at: new Date().toISOString()
+};
+
+saveObserverInfo();
 
   if (!assessment.evaluator_id || !assessment.image_id || !assessment.target_tooth) {
     alert("Please complete Evaluator ID, Image ID, and Target Tooth before saving.");
@@ -279,5 +299,100 @@ function updateSavedCount() {
   if (savedCount) {
     savedCount.textContent = "Saved records: " + existingData.length;
   }
+}
+
+  function saveObserverInfo() {
+  const observerInfo = {
+    evaluator_id: getValue("evaluatorId"),
+    participant_id: getValue("participantId"),
+    experience_years: getValue("experienceYears"),
+    specialty: getValue("specialty")
+  };
+
+  localStorage.setItem("observer_info", JSON.stringify(observerInfo));
+}
+
+function restoreObserverInfo() {
+  const observerInfo = JSON.parse(localStorage.getItem("observer_info")) || {};
+
+  setValue("evaluatorId", observerInfo.evaluator_id);
+  setValue("participantId", observerInfo.participant_id);
+  setValue("experienceYears", observerInfo.experience_years);
+  setValue("specialty", observerInfo.specialty);
+}
+
+function exportBackupJSON() {
+  const existingData = JSON.parse(localStorage.getItem("radiograph_assessments")) || [];
+  const observerInfo = JSON.parse(localStorage.getItem("observer_info")) || {};
+
+  if (existingData.length === 0) {
+    alert("No saved data to back up.");
+    return;
+  }
+
+  const backupData = {
+    project: "Radiograph Gold Standard Platform",
+    export_type: "backup_json",
+    exported_at: new Date().toISOString(),
+    observer_info: observerInfo,
+    assessments: existingData
+  };
+
+  const blob = new Blob([JSON.stringify(backupData, null, 2)], {
+    type: "application/json"
+  });
+
+  const evaluatorId = getValue("evaluatorId") || "unknown_evaluator";
+  const today = new Date().toISOString().slice(0, 10);
+  const fileName = evaluatorId + "_backup_" + today + ".json";
+
+  const downloadLink = document.createElement("a");
+  downloadLink.href = URL.createObjectURL(blob);
+  downloadLink.download = fileName;
+  downloadLink.click();
+
+  URL.revokeObjectURL(downloadLink.href);
+}
+
+function importBackupJSON(event) {
+  const file = event.target.files[0];
+
+  if (!file) {
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = function (e) {
+    try {
+      const backupData = JSON.parse(e.target.result);
+
+      if (!backupData.assessments || !Array.isArray(backupData.assessments)) {
+        alert("Invalid backup file.");
+        return;
+      }
+
+      localStorage.setItem(
+        "radiograph_assessments",
+        JSON.stringify(backupData.assessments)
+      );
+
+      if (backupData.observer_info) {
+        localStorage.setItem(
+          "observer_info",
+          JSON.stringify(backupData.observer_info)
+        );
+      }
+
+      restoreObserverInfo();
+      updateSavedCount();
+
+      alert("Backup imported successfully. Saved records: " + backupData.assessments.length);
+    } catch (error) {
+      alert("Cannot import backup file. Please check the JSON file.");
+    }
+  };
+
+  reader.readAsText(file);
 }
 }
