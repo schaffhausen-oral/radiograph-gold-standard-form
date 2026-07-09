@@ -2,6 +2,10 @@ let imageFiles = [];
 let currentImageIndex = 0;
 
 document.addEventListener("DOMContentLoaded", function () {
+    const jsStatus = document.getElementById("jsStatus");
+  if (jsStatus) {
+    jsStatus.textContent = "JavaScript status: loaded";
+  }
   const imageUpload = document.getElementById("imageUpload");
   const prevImageBtn = document.getElementById("prevImageBtn");
   const nextImageBtn = document.getElementById("nextImageBtn");
