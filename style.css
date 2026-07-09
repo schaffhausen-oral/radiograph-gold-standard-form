@@ -430,3 +430,44 @@ button:focus-visible {
     left: 18px !important;
   }
 }
+
+
+/* Comfortable radiograph viewer size - force override */
+.viewer-box {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  border: 1px solid #c4b5fd;
+  border-radius: 16px;
+  padding: 14px;
+  background: #faf5ff;
+}
+
+#radiographImage {
+  display: block !important;
+
+  width: auto !important;
+  height: auto !important;
+
+  max-width: 100% !important;
+  max-height: 460px !important;
+
+  object-fit: contain !important;
+  margin: 12px auto !important;
+
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  background: #020617;
+}
+
+.card {
+  overflow: hidden !important;
+}
+
+.container {
+  max-width: 1050px !important;
+}
+
+.button-row {
+  max-width: 100% !important;
+}
