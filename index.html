@@ -93,86 +93,81 @@
     Select all de-identified radiograph images. Image ID will be automatically generated from the file name.
     Example: IMG_0001.png → IMG_0001
     <br />
-<strong>Resume instruction:</strong>
-If the evaluation cannot be completed in one day, use the same computer and same browser.
-On the next day, upload the same radiograph files again. Previously saved records will be restored automatically by Image ID.
+    <strong>Resume instruction:</strong>
+    If the evaluation cannot be completed in one day, use the same computer and same browser.
+    On the next day, upload the same radiograph files again. Previously saved records will be restored automatically by Image ID.
   </p>
 
   <div class="viewer-box">
     <p id="imageProgress">No image loaded</p>
-    
-<div class="jump-row">
-  <input
-    type="number"
-    id="jumpImageNumber"
-    min="1"
-    placeholder="Jump to image number, e.g. 250"
-  />
 
-  <button type="button" id="jumpImageBtn">Jump</button>
-</div>
-
-<img id="radiographImage" alt="Radiograph preview" />
     <div class="progress-dashboard">
-  <div>
-    <span class="progress-label">Saved</span>
-    <strong id="savedImageCount">0</strong>
-  </div>
+      <div>
+        <span class="progress-label">Saved</span>
+        <strong id="savedImageCount">0</strong>
+      </div>
 
-  <div>
-    <span class="progress-label">Remaining</span>
-    <strong id="remainingImageCount">0</strong>
-  </div>
+      <div>
+        <span class="progress-label">Remaining</span>
+        <strong id="remainingImageCount">0</strong>
+      </div>
 
-  <div>
-    <span class="progress-label">Current Image</span>
-    <strong id="currentSaveStatus">Not saved</strong>
-  </div>
-</div>
+      <div>
+        <span class="progress-label">Current Image</span>
+        <strong id="currentSaveStatus">Not saved</strong>
+      </div>
+    </div>
 
-<div class="jump-row">
-  <input 
-    type="number" 
-    id="jumpImageNumber" 
-    min="1" 
-    placeholder="Jump to image number, e.g. 250" 
-  />
-  <button type="button" id="jumpImageBtn">Jump</button>
-</div>
+    <div class="jump-row">
+      <input
+        type="number"
+        id="jumpImageNumber"
+        min="1"
+        placeholder="Jump to image number, e.g. 250"
+      />
+      <button type="button" id="jumpImageBtn">Jump</button>
+    </div>
 
     <img id="radiographImage" alt="Radiograph preview" />
 
-    <div class="button-row action-grid">
-<div class="workflow-panel">
-  <h3>Workflow Controls</h3>
-
-  <div class="button-row action-grid">
-    <button type="button" id="saveAssessmentBtn">Save Assessment</button>
-    <button type="button" id="saveNextBtn">Save & Next</button>
-    <button type="button" id="nextUnsavedBtn">Next Unsaved Image</button>
-    <button type="button" id="exportCsvBtn">Export CSV</button>
-  </div>
-
-  <details class="data-tools">
-    <summary>Data management tools</summary>
-
-    <div class="button-row action-grid">
-      <button type="button" id="exportBackupBtn">Export Backup JSON</button>
-      <button type="button" id="importBackupBtn">Import Backup JSON</button>
-      <button type="button" id="clearDataBtn" class="danger-button">Clear Saved Data</button>
+    <div class="button-row">
+      <button type="button" id="prevImageBtn">Previous Image</button>
+      <button type="button" id="nextImageBtn">Next Image</button>
     </div>
 
-    <input type="file" id="backupFileInput" accept=".json" style="display: none;" />
+    <div class="workflow-panel">
+      <h3>Workflow Controls</h3>
 
-    <p id="savedCount" class="small-note">
-      Saved records: 0
-    </p>
-  </details>
-</div>
-</div>
+      <div class="button-row action-grid">
+        <button type="button" id="saveAssessmentBtn">Save Assessment</button>
+        <button type="button" id="saveNextBtn">Save & Next</button>
+        <button type="button" id="nextUnsavedBtn">Next Unsaved Image</button>
+        <button type="button" id="exportCsvBtn">Export CSV</button>
+      </div>
+
+      <details class="data-tools">
+        <summary>Data management tools</summary>
+
+        <div class="button-row action-grid">
+          <button type="button" id="exportBackupBtn">Export Backup JSON</button>
+          <button type="button" id="importBackupBtn">Import Backup JSON</button>
+          <button type="button" id="clearDataBtn" class="danger-button">Clear Saved Data</button>
+        </div>
+
+        <input type="file" id="backupFileInput" accept=".json" style="display: none;" />
+
+        <p id="savedCount" class="small-note">
+          Saved records: 0
+        </p>
+
+        <p class="small-note">
+          Clear Saved Data will delete locally saved assessment records from this browser only.
+        </p>
+      </details>
+    </div>
   </div>
 </section>
-
+    
     <section class="card">
       <h2>Assessment Form</h2>
 
