@@ -94,11 +94,19 @@ function handleImageUpload(event) {
 
   if (imageFiles.length === 0) {
     clearImageViewer();
-    alert("No valid image files selected. Please select JPG, PNG, or other browser-supported image files.");
+    alert(
+      "No valid image files selected. Please select JPG, PNG, or other browser-supported image files."
+    );
     return;
   }
 
+  registerUploadedImages(imageFiles);
   showCurrentImage();
+
+  alert(
+    imageFiles.length +
+      " radiograph images were registered automatically. Images remain unlabelled until an assessment is saved."
+  );
 }
 
 function showCurrentImage() {
@@ -269,6 +277,7 @@ function saveAssessment(showAlert) {
   }
 
   localStorage.setItem("radiograph_assessments", JSON.stringify(existingData));
+  markImageAsLabelled(assessment.image_id);
 
   updateSavedCount();
   updateProgressDashboard();
@@ -379,41 +388,44 @@ function clearAssessmentFields() {
 
 function exportAssessmentsAsCSV() {
   const exportConfirmed = confirm(
-    "Are you sure you want to export the CSV file? Please confirm that this evaluator's data is ready to send to the principal investigator."
+    "Are you sure you want to export the CSV file?\n\nThe exported file will include both labelled and unlabelled radiographs."
   );
 
   if (!exportConfirmed) {
     return;
   }
 
-  const existingData = JSON.parse(localStorage.getItem("radiograph_assessments")) || [];
+  const manifest =
+    JSON.parse(localStorage.getItem("radiograph_image_manifest")) || [];
 
-  if (existingData.length === 0) {
-    alert("No saved assessment data to export.");
+  const assessments =
+    JSON.parse(localStorage.getItem("radiograph_assessments")) || [];
+
+  if (manifest.length === 0) {
+    alert("No uploaded radiograph records are available to export.");
     return;
   }
 
   const evaluatorId = getValue("evaluatorId");
 
-  let dataToExport = existingData;
+  const evaluatorAssessments = evaluatorId
+    ? assessments.filter(function (record) {
+        return record.evaluator_id === evaluatorId;
+      })
+    : assessments;
 
-  if (evaluatorId) {
-    dataToExport = existingData.filter(function (record) {
-      return record.evaluator_id === evaluatorId;
-    });
-  }
+  const assessmentMap = new Map();
 
-  if (dataToExport.length === 0) {
-    alert("No saved data found for this Evaluator ID.");
-    return;
-  }
+  evaluatorAssessments.forEach(function (record) {
+    assessmentMap.set(record.image_id, record);
+  });
 
   const headers = [
     "evaluator_id",
-    "participant_id",
-    "experience_years",
-    "specialty",
     "image_id",
+    "file_name",
+    "upload_order",
+    "label_status",
     "target_tooth",
     "image_quality",
     "angulation",
@@ -427,29 +439,61 @@ function exportAssessmentsAsCSV() {
 
   const csvRows = [headers.join(",")];
 
-  dataToExport.forEach(function (record) {
-    const row = headers.map(function (header) {
-      return escapeCSV(record[header] || "");
-    });
+  manifest.forEach(function (imageRecord) {
+    const assessment = assessmentMap.get(imageRecord.image_id) || {};
 
-    csvRows.push(row.join(","));
+    const row = {
+      evaluator_id: assessment.evaluator_id || evaluatorId || "",
+      image_id: imageRecord.image_id,
+      file_name: imageRecord.file_name,
+      upload_order: imageRecord.upload_order,
+      label_status: assessment.image_id ? "Labelled" : "Unlabelled",
+      target_tooth: assessment.target_tooth || "",
+      image_quality: assessment.image_quality || "",
+      angulation: assessment.angulation || "",
+      pell_ramus: assessment.pell_ramus || "",
+      pell_depth: assessment.pell_depth || "",
+      overall_ian_risk: assessment.overall_ian_risk || "",
+      confidence_score: assessment.confidence_score || "",
+      comment: assessment.comment || "",
+      saved_at: assessment.saved_at || ""
+    };
+
+    csvRows.push(
+      headers
+        .map(function (header) {
+          return escapeCSV(row[header]);
+        })
+        .join(",")
+    );
   });
 
-  const csvContent = csvRows.join("\n");
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const csvContent = "\uFEFF" + csvRows.join("\n");
+
+  const blob = new Blob([csvContent], {
+    type: "text/csv;charset=utf-8;"
+  });
 
   const fileEvaluatorId = evaluatorId || "unknown_evaluator";
   const today = new Date().toISOString().slice(0, 10);
-  const fileName = fileEvaluatorId + "_radiograph_assessment_" + today + ".csv";
+
+  const fileName =
+    fileEvaluatorId +
+    "_radiograph_registry_and_assessment_" +
+    today +
+    ".csv";
 
   const downloadLink = document.createElement("a");
+
   downloadLink.href = URL.createObjectURL(blob);
   downloadLink.download = fileName;
+
+  document.body.appendChild(downloadLink);
   downloadLink.click();
+  downloadLink.remove();
 
   URL.revokeObjectURL(downloadLink.href);
 }
-
 function escapeCSV(value) {
   const stringValue = String(value).replace(/"/g, '""');
   return '"' + stringValue + '"';
@@ -466,7 +510,8 @@ function clearSavedData() {
   }
 
   localStorage.removeItem("radiograph_assessments");
-
+  localStorage.removeItem("radiograph_image_manifest");
+  
   updateSavedCount();
   updateProgressDashboard();
 
@@ -503,11 +548,19 @@ function restoreObserverInfo() {
 }
 
 function exportBackupJSON() {
-  const existingData = JSON.parse(localStorage.getItem("radiograph_assessments")) || [];
-  const observerInfo = JSON.parse(localStorage.getItem("observer_info")) || {};
+  const existingData =
+    JSON.parse(localStorage.getItem("radiograph_assessments")) || [];
 
-  if (existingData.length === 0) {
-    alert("No saved data to back up.");
+  const observerInfo =
+    JSON.parse(localStorage.getItem("observer_info")) || {};
+
+  const imageManifest =
+    JSON.parse(localStorage.getItem("radiograph_image_manifest")) || [];
+
+  // Allow backup when there are registered images,
+  // even if none of them has been labelled yet.
+  if (existingData.length === 0 && imageManifest.length === 0) {
+    alert("No registered images or saved assessment data to back up.");
     return;
   }
 
@@ -516,23 +569,40 @@ function exportBackupJSON() {
     export_type: "backup_json",
     exported_at: new Date().toISOString(),
     observer_info: observerInfo,
+    image_manifest: imageManifest,
     assessments: existingData
   };
 
-  const blob = new Blob([JSON.stringify(backupData, null, 2)], {
-    type: "application/json"
-  });
+  const blob = new Blob(
+    [JSON.stringify(backupData, null, 2)],
+    {
+      type: "application/json"
+    }
+  );
 
-  const evaluatorId = getValue("evaluatorId") || "unknown_evaluator";
-  const today = new Date().toISOString().slice(0, 10);
-  const fileName = evaluatorId + "_backup_" + today + ".json";
+  const evaluatorId =
+    getValue("evaluatorId") || "unknown_evaluator";
 
-  const downloadLink = document.createElement("a");
-  downloadLink.href = URL.createObjectURL(blob);
+  const today =
+    new Date().toISOString().slice(0, 10);
+
+  const fileName =
+    evaluatorId + "_backup_" + today + ".json";
+
+  const downloadUrl =
+    URL.createObjectURL(blob);
+
+  const downloadLink =
+    document.createElement("a");
+
+  downloadLink.href = downloadUrl;
   downloadLink.download = fileName;
-  downloadLink.click();
 
-  URL.revokeObjectURL(downloadLink.href);
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  downloadLink.remove();
+
+  URL.revokeObjectURL(downloadUrl);
 }
 
 function importBackupJSON(event) {
@@ -546,30 +616,76 @@ function importBackupJSON(event) {
 
   reader.onload = function (e) {
     try {
-      const backupData = JSON.parse(e.target.result);
+      const backupData =
+        JSON.parse(e.target.result);
 
-      if (!backupData.assessments || !Array.isArray(backupData.assessments)) {
-        alert("Invalid backup file.");
+      if (
+        !backupData.assessments ||
+        !Array.isArray(backupData.assessments)
+      ) {
+        alert("Invalid backup file: assessments data is missing.");
         return;
       }
 
-      localStorage.setItem("radiograph_assessments", JSON.stringify(backupData.assessments));
+      // Restore assessment data
+      localStorage.setItem(
+        "radiograph_assessments",
+        JSON.stringify(backupData.assessments)
+      );
 
+      // Restore observer information
       if (backupData.observer_info) {
-        localStorage.setItem("observer_info", JSON.stringify(backupData.observer_info));
+        localStorage.setItem(
+          "observer_info",
+          JSON.stringify(backupData.observer_info)
+        );
+      }
+
+      // Restore registered image manifest
+      if (
+        backupData.image_manifest &&
+        Array.isArray(backupData.image_manifest)
+      ) {
+        localStorage.setItem(
+          "radiograph_image_manifest",
+          JSON.stringify(backupData.image_manifest)
+        );
       }
 
       restoreObserverInfo();
       updateSavedCount();
       updateProgressDashboard();
+      updateUploadedImageCount();
 
-      alert("Backup imported successfully. Saved records: " + backupData.assessments.length);
+      alert(
+        "Backup imported successfully.\n\n" +
+        "Registered images: " +
+        (
+          Array.isArray(backupData.image_manifest)
+            ? backupData.image_manifest.length
+            : 0
+        ) +
+        "\nSaved assessments: " +
+        backupData.assessments.length
+      );
     } catch (error) {
-      alert("Cannot import backup file. Please check the JSON file.");
+      console.error("Backup import error:", error);
+
+      alert(
+        "Cannot import backup file. " +
+        "Please check that the selected file is a valid JSON backup."
+      );
     }
   };
 
+  reader.onerror = function () {
+    alert("Cannot read the selected backup file.");
+  };
+
   reader.readAsText(file);
+
+  // Allow selection of the same backup file again
+  event.target.value = "";
 }
 
 function updateProgressDashboard() {
@@ -615,7 +731,70 @@ function setJavaScriptStatus(text) {
     jsStatus.textContent = text;
   }
 }
+function registerUploadedImages(files) {
+  const existingManifest =
+    JSON.parse(localStorage.getItem("radiograph_image_manifest")) || [];
 
+  const existingAssessments =
+    JSON.parse(localStorage.getItem("radiograph_assessments")) || [];
+
+  const manifestMap = new Map();
+
+  existingManifest.forEach(function (item) {
+    manifestMap.set(item.image_id, item);
+  });
+
+  files.forEach(function (file, index) {
+    const imageId = getImageIdFromFileName(file.name);
+
+    const hasAssessment = existingAssessments.some(function (assessment) {
+      return assessment.image_id === imageId;
+    });
+
+    const previousRecord = manifestMap.get(imageId);
+
+    manifestMap.set(imageId, {
+      image_id: imageId,
+      file_name: file.name,
+      file_type: file.type || "",
+      file_size_bytes: file.size || 0,
+      upload_order: index + 1,
+      label_status: hasAssessment ? "Labelled" : "Unlabelled",
+      first_registered_at: previousRecord
+        ? previousRecord.first_registered_at
+        : new Date().toISOString(),
+      last_selected_at: new Date().toISOString()
+    });
+  });
+
+  const updatedManifest = Array.from(manifestMap.values());
+
+  updatedManifest.sort(function (a, b) {
+    return a.image_id.localeCompare(b.image_id, undefined, {
+      numeric: true
+    });
+  });
+
+  localStorage.setItem(
+    "radiograph_image_manifest",
+    JSON.stringify(updatedManifest)
+  );
+
+  updateUploadedImageCount();
+}
+function updateUploadedImageCount() {
+  const manifest =
+    JSON.parse(localStorage.getItem("radiograph_image_manifest")) || [];
+
+  const imageProgress = document.getElementById("imageProgress");
+
+  if (imageFiles.length === 0 && imageProgress) {
+    imageProgress.textContent =
+      "No image currently loaded | " +
+      manifest.length +
+      " images previously registered";
+  }
+}
 function getValue(id) {
   const element = document.getElementById(id);
   return element ? element.value.trim() : "";
@@ -635,4 +814,26 @@ function setText(id, value) {
   if (element) {
     element.textContent = value;
   }
+}
+
+function markImageAsLabelled(imageId) {
+  const manifest =
+    JSON.parse(localStorage.getItem("radiograph_image_manifest")) || [];
+
+  const updatedManifest = manifest.map(function (item) {
+    if (item.image_id === imageId) {
+      return {
+        ...item,
+        label_status: "Labelled",
+        last_labelled_at: new Date().toISOString()
+      };
+    }
+
+    return item;
+  });
+
+  localStorage.setItem(
+    "radiograph_image_manifest",
+    JSON.stringify(updatedManifest)
+  );
 }
