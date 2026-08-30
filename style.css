@@ -608,3 +608,10 @@ button:focus-visible {
   font-weight: bold;
   color: #312e81;
 }
+
+#clearDataBtn,
+#importBackupBtn,
+#backupFileInput,
+#jsStatus {
+  display: none !important;
+}
