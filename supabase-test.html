@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Supabase Connection Test</title>
+</head>
+
+<body>
+
+  <h2>Supabase Connection Test</h2>
+
+  <p id="status">
+    Testing...
+  </p>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase-config.js"></script>
+
+  <script>
+    async function testConnection() {
+      const status = document.getElementById("status");
+
+      try {
+        const { data, error } = await supabaseClient
+          .from("radiographs")
+          .select("image_order,image_id,file_name")
+          .order("image_order", { ascending: true })
+          .limit(3);
+
+        if (error) {
+          status.innerHTML =
+            "<b>Connection reached Supabase, but access was denied:</b><br>" +
+            error.message;
+
+          return;
+        }
+
+        status.innerHTML =
+          "<b>SUCCESS</b><br><br>" +
+          "Rows returned: " +
+          data.length +
+          "<br><br>" +
+          JSON.stringify(data, null, 2);
+
+      } catch (error) {
+        status.textContent =
+          "Connection error: " + error.message;
+      }
+    }
+
+    testConnection();
+  </script>
+
+</body>
+</html>
