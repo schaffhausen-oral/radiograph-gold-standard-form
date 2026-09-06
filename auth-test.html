@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Observer Login Test</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 500px;
+      margin: 60px auto;
+      padding: 20px;
+    }
+
+    .login-card {
+      border: 1px solid #ccc;
+      border-radius: 14px;
+      padding: 24px;
+    }
+
+    input,
+    button {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    #status {
+      margin-top: 18px;
+      white-space: pre-line;
+    }
+
+    #logoutBtn {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="login-card">
+
+    <h2>Observer Login</h2>
+
+    <label for="evaluatorId">
+      Evaluator ID
+    </label>
+
+    <input
+      id="evaluatorId"
+      type="text"
+      placeholder="E01"
+      autocomplete="off"
+    />
+
+    <label for="password">
+      Password
+    </label>
+
+    <input
+      id="password"
+      type="password"
+      placeholder="Password"
+    />
+
+    <button id="loginBtn">
+      Sign In
+    </button>
+
+    <button id="logoutBtn">
+      Sign Out
+    </button>
+
+    <div id="status">
+      Not signed in.
+    </div>
+
+  </div>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script src="./supabase-config.js"></script>
+
+
+  <script>
+
+    /*
+      IMPORTANT:
+      Replace these three email addresses with
+      the exact emails you created in Supabase Authentication.
+    */
+
+    const EVALUATOR_EMAILS = {
+      E01: "observer01@impactedthirdmolar.com",
+      E02: "observer02@impactedthirdmolar.com",
+      E03: "observer03@impactedthirdmolar.com"
+    };
+
+
+    const evaluatorInput =
+      document.getElementById("evaluatorId");
+
+    const passwordInput =
+      document.getElementById("password");
+
+    const loginBtn =
+      document.getElementById("loginBtn");
+
+    const logoutBtn =
+      document.getElementById("logoutBtn");
+
+    const status =
+      document.getElementById("status");
+
+
+    loginBtn.addEventListener(
+      "click",
+      login
+    );
+
+
+    logoutBtn.addEventListener(
+      "click",
+      logout
+    );
+
+
+    passwordInput.addEventListener(
+      "keydown",
+      function (event) {
+
+        if (event.key === "Enter") {
+          login();
+        }
+
+      }
+    );
+
+
+    async function login() {
+
+      const evaluatorId =
+        evaluatorInput.value
+          .trim()
+          .toUpperCase();
+
+      const password =
+        passwordInput.value;
+
+
+      if (!EVALUATOR_EMAILS[evaluatorId]) {
+
+        status.textContent =
+          "Invalid Evaluator ID.";
+
+        return;
+      }
+
+
+      if (!password) {
+
+        status.textContent =
+          "Please enter your password.";
+
+        return;
+      }
+
+
+      status.textContent =
+        "Signing in...";
+
+
+      const email =
+        EVALUATOR_EMAILS[evaluatorId];
+
+
+      const {
+        data,
+        error
+      } =
+        await supabaseClient.auth
+          .signInWithPassword({
+            email: email,
+            password: password
+          });
+
+
+      if (error) {
+
+        status.textContent =
+          "Sign in failed.\n" +
+          error.message;
+
+        return;
+      }
+
+
+      const user =
+        data.user;
+
+
+      if (!user) {
+
+        status.textContent =
+          "Authentication failed.";
+
+        return;
+      }
+
+
+      /*
+        Verify that the authenticated account
+        really belongs to the entered E01/E02/E03.
+      */
+
+      const {
+        data: evaluatorRecord,
+        error: evaluatorError
+      } =
+        await supabaseClient
+          .from("evaluators")
+          .select("evaluator_id")
+          .eq("user_id", user.id)
+          .single();
+
+
+      if (evaluatorError) {
+
+        await supabaseClient.auth
+          .signOut();
+
+        status.textContent =
+          "Account authenticated, but evaluator identity could not be verified.\n" +
+          evaluatorError.message;
+
+        return;
+      }
+
+
+      if (
+        evaluatorRecord.evaluator_id
+          !== evaluatorId
+      ) {
+
+        await supabaseClient.auth
+          .signOut();
+
+        status.textContent =
+          "Evaluator ID does not match this account.";
+
+        return;
+      }
+
+
+      showLoggedIn(
+        evaluatorRecord.evaluator_id
+      );
+    }
+
+
+    async function logout() {
+
+      await supabaseClient.auth.signOut();
+
+      passwordInput.value = "";
+
+      loginBtn.style.display =
+        "block";
+
+      logoutBtn.style.display =
+        "none";
+
+      status.textContent =
+        "Signed out.";
+    }
+
+
+    function showLoggedIn(
+      evaluatorId
+    ) {
+
+      evaluatorInput.value =
+        evaluatorId;
+
+      evaluatorInput.readOnly =
+        true;
+
+      passwordInput.value =
+        "";
+
+      loginBtn.style.display =
+        "none";
+
+      logoutBtn.style.display =
+        "block";
+
+      status.textContent =
+        "SUCCESS\n\n" +
+        "Authenticated evaluator: " +
+        evaluatorId;
+    }
+
+
+    /*
+      Check whether this browser already
+      has a valid Supabase session.
+    */
+
+    async function restoreSession() {
+
+      const {
+        data,
+        error
+      } =
+        await supabaseClient.auth
+          .getUser();
+
+
+      if (
+        error ||
+        !data.user
+      ) {
+
+        return;
+      }
+
+
+      const {
+        data: evaluatorRecord,
+        error: evaluatorError
+      } =
+        await supabaseClient
+          .from("evaluators")
+          .select("evaluator_id")
+          .eq(
+            "user_id",
+            data.user.id
+          )
+          .single();
+
+
+      if (
+        evaluatorError ||
+        !evaluatorRecord
+      ) {
+
+        return;
+      }
+
+
+      showLoggedIn(
+        evaluatorRecord.evaluator_id
+      );
+    }
+
+
+    restoreSession();
+
+  </script>
+
+</body>
+</html>
