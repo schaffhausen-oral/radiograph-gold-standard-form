@@ -1,1286 +1,585 @@
-let imageFiles = [];
+let radiographs = [];
+let assessments = new Map();
 let currentImageIndex = 0;
-let currentImageObjectUrl = null;
+let currentUserId = "";
+let currentEvaluatorId = "";
+let autosaveTimer = null;
+let appReady = false;
+
+const FIELD_IDS = [
+  "targetTooth",
+  "imageQuality",
+  "angulation",
+  "pellRamus",
+  "pellDepth",
+  "ianRisk",
+  "confidenceScore",
+  "comment"
+];
 
 document.addEventListener("DOMContentLoaded", async function () {
   setJavaScriptStatus("JavaScript status: loaded");
-
-  bindEvents();
+  prepareCloudUI();
+  bindButtons();
+  bindAutosave();
   restoreObserverInfo();
-  updateSavedCount();
-  updateProgressDashboard();
-
-  await restoreSavedImages();
+  await restoreSession();
 });
 
-function bindEvents() {
+function prepareCloudUI() {
   const imageUpload = document.getElementById("imageUpload");
-  const prevImageBtn = document.getElementById("prevImageBtn");
-  const nextImageBtn = document.getElementById("nextImageBtn");
-  const jumpImageBtn = document.getElementById("jumpImageBtn");
+  if (imageUpload) imageUpload.style.display = "none";
 
-  const saveButton = document.getElementById("saveAssessmentBtn");
-  const saveNextBtn = document.getElementById("saveNextBtn");
-  const nextUnsavedBtn = document.getElementById("nextUnsavedBtn");
+  const uploadLabel = document.querySelector('label[for="imageUpload"]');
+  if (uploadLabel) uploadLabel.style.display = "none";
 
-  const exportCsvBtn = document.getElementById("exportCsvBtn");
-  const clearDataBtn = document.getElementById("clearDataBtn");
-  const exportBackupBtn = document.getElementById("exportBackupBtn");
-  const importBackupBtn = document.getElementById("importBackupBtn");
-  const backupFileInput = document.getElementById("backupFileInput");
+  const clearBtn = document.getElementById("clearDataBtn");
+  if (clearBtn) clearBtn.style.display = "none";
 
-  if (imageUpload) {
-    imageUpload.addEventListener("change", handleImageUpload);
-  }
+  const importBtn = document.getElementById("importBackupBtn");
+  if (importBtn) importBtn.style.display = "none";
 
-  if (prevImageBtn) {
-    prevImageBtn.addEventListener("click", showPreviousImage);
-  }
+  if (!document.getElementById("cloudLoginOverlay")) {
+    const overlay = document.createElement("div");
+    overlay.id = "cloudLoginOverlay";
+    overlay.innerHTML = `
+      <div class="cloud-login-card">
+        <div class="cloud-kicker">Radiograph Gold Standard Platform</div>
+        <h2>Observer Sign In</h2>
+        <p>Use the evaluator ID and password provided by the research team.</p>
+        <label>Evaluator ID</label>
+        <input id="cloudEvaluatorId" type="text" placeholder="E01" autocomplete="username">
+        <label>Password</label>
+        <input id="cloudPassword" type="password" placeholder="Password" autocomplete="current-password">
+        <button id="cloudLoginBtn" type="button">Sign In</button>
+        <div id="cloudLoginStatus">Not signed in.</div>
+      </div>`;
+    document.body.appendChild(overlay);
 
-  if (nextImageBtn) {
-    nextImageBtn.addEventListener("click", showNextImage);
-  }
+    const style = document.createElement("style");
+    style.textContent = `
+      #cloudLoginOverlay{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(15,18,35,.84);backdrop-filter:blur(8px)}
+      .cloud-login-card{width:min(440px,100%);background:#fff;border-radius:18px;padding:28px;box-shadow:0 24px 70px rgba(0,0,0,.3)}
+      .cloud-login-card h2{margin:6px 0 8px}.cloud-login-card p{color:#555;line-height:1.5}.cloud-kicker{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.65}
+      .cloud-login-card label{display:block;margin:14px 0 6px;font-weight:600}.cloud-login-card input{width:100%;box-sizing:border-box;padding:12px;border:1px solid #ccc;border-radius:10px;font-size:16px}
+      #cloudLoginBtn{width:100%;margin-top:18px;padding:12px;border:0;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer}#cloudLoginStatus{margin-top:14px;white-space:pre-line;font-size:14px}
+      #cloudTopBar{position:fixed;top:16px;right:16px;z-index:9000;display:none;gap:10px;align-items:center;background:rgba(255,255,255,.95);padding:8px 10px;border-radius:12px;box-shadow:0 4px 18px rgba(0,0,0,.15)}
+      #cloudSaveText{font-size:13px;font-weight:700}
+    `;
+    document.head.appendChild(style);
 
-  if (jumpImageBtn) {
-    jumpImageBtn.addEventListener("click", jumpToImage);
-  }
-
-  if (saveButton) {
-    saveButton.addEventListener("click", function () {
-      saveAssessment(true);
+    document.getElementById("cloudLoginBtn").addEventListener("click", login);
+    document.getElementById("cloudPassword").addEventListener("keydown", function (e) {
+      if (e.key === "Enter") login();
     });
   }
 
-  if (saveNextBtn) {
-    saveNextBtn.addEventListener("click", saveAndNextImage);
-  }
-
-  if (nextUnsavedBtn) {
-    nextUnsavedBtn.addEventListener("click", goToNextUnsavedImage);
-  }
-
-  if (exportCsvBtn) {
-    exportCsvBtn.addEventListener("click", exportAssessmentsAsCSV);
-  }
-
-  if (clearDataBtn) {
-    clearDataBtn.addEventListener("click", clearSavedData);
-  }
-
-  if (exportBackupBtn) {
-    exportBackupBtn.addEventListener("click", exportBackupJSON);
-  }
-
-  if (importBackupBtn && backupFileInput) {
-    importBackupBtn.addEventListener("click", function () {
-      backupFileInput.click();
-    });
-  }
-
-  if (backupFileInput) {
-    backupFileInput.addEventListener("change", importBackupJSON);
+  if (!document.getElementById("cloudTopBar")) {
+    const bar = document.createElement("div");
+    bar.id = "cloudTopBar";
+    bar.innerHTML = `
+      <span id="cloudEvaluatorText"></span>
+      <span id="cloudSaveText"></span>
+      <button id="cloudLogoutBtn" type="button">Sign Out</button>`;
+    document.body.appendChild(bar);
+    document.getElementById("cloudLogoutBtn").addEventListener("click", logout);
   }
 }
 
-async function handleImageUpload(event) {
-  const selectedFiles = Array.from(event.target.files || []);
-  const supportedExtension = /\.(jpe?g|png|webp|bmp|gif)$/i;
+async function login() {
+  const status = document.getElementById("cloudLoginStatus");
+  const evaluatorId = String(document.getElementById("cloudEvaluatorId").value || "").trim().toUpperCase();
+  const password = document.getElementById("cloudPassword").value || "";
 
-  imageFiles = selectedFiles.filter(function (file) {
-    return (
-      (file.type && file.type.startsWith("image/")) ||
-      supportedExtension.test(file.name)
-    );
+  if (!window.EVALUATOR_EMAILS || !window.EVALUATOR_EMAILS[evaluatorId]) {
+    status.textContent = "Invalid Evaluator ID.";
+    return;
+  }
+  if (!password) {
+    status.textContent = "Please enter your password.";
+    return;
+  }
+
+  status.textContent = "Signing in...";
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email: window.EVALUATOR_EMAILS[evaluatorId],
+    password
   });
 
-  imageFiles.sort(function (a, b) {
-    return a.name.localeCompare(
-      b.name,
-      undefined,
-      { numeric: true }
-    );
-  });
-
-  currentImageIndex = 0;
-
-  if (imageFiles.length === 0) {
-    clearImageViewer();
-
-    alert(
-      "No valid image files selected. Please select JPG, JPEG, PNG, WEBP, BMP, or GIF files."
-    );
-
+  if (error || !data.user) {
+    status.textContent = "Sign in failed.\n" + (error ? error.message : "Unknown error");
     return;
   }
 
-  const imageProgress = document.getElementById("imageProgress");
+  const { data: identity, error: identityError } = await supabaseClient
+    .from("evaluators")
+    .select("evaluator_id")
+    .eq("user_id", data.user.id)
+    .single();
 
-  if (imageProgress) {
-    imageProgress.textContent =
-      "Saving " + imageFiles.length + " radiograph images locally...";
-  }
-
-  try {
-    const persistentStorageGranted =
-      await requestPersistentRadiographStorage();
-
-    await saveRadiographFilesToDB(imageFiles);
-
-    registerUploadedImages(imageFiles);
-    showCurrentImage();
-
-    const storageEstimate = await getRadiographStorageEstimate();
-    let storageMessage = "";
-
-    if (
-      storageEstimate &&
-      typeof storageEstimate.usage === "number" &&
-      typeof storageEstimate.quota === "number"
-    ) {
-      const usedMB = (
-        storageEstimate.usage /
-        (1024 * 1024)
-      ).toFixed(1);
-
-      const quotaMB = (
-        storageEstimate.quota /
-        (1024 * 1024)
-      ).toFixed(1);
-
-      storageMessage =
-        "\nBrowser storage used: " +
-        usedMB +
-        " MB of approximately " +
-        quotaMB +
-        " MB.";
-    }
-
-    alert(
-      imageFiles.length +
-        " radiograph images were saved in this browser.\n\n" +
-        "They will be restored automatically after closing and reopening this website on the same laptop and browser.\n\n" +
-        (
-          persistentStorageGranted
-            ? "Persistent browser storage is active."
-            : "The browser did not guarantee persistent storage. Keep a separate copy of the original images."
-        ) +
-        storageMessage
-    );
-  } catch (error) {
-    console.error("Image storage error:", error);
-
-    clearImageViewer();
-
-    alert(
-      "The images could not be saved in this browser.\n\n" +
-      "Possible causes include insufficient storage space or disabled browser storage.\n\n" +
-      "Error: " +
-      (error.message || "Unknown error")
-    );
-  }
-}
-
-async function restoreSavedImages() {
-  try {
-    const savedFiles = await loadRadiographFilesFromDB();
-
-    if (savedFiles.length === 0) {
-      updateUploadedImageCount();
-      return;
-    }
-
-    imageFiles = savedFiles;
-
-    imageFiles.sort(function (a, b) {
-      return a.name.localeCompare(
-        b.name,
-        undefined,
-        { numeric: true }
-      );
-    });
-
-    currentImageIndex = 0;
-    showCurrentImage();
-  } catch (error) {
-    console.error("Saved image restoration error:", error);
-
-    updateUploadedImageCount();
-  }
-}
-
-function showCurrentImage() {
-  if (imageFiles.length === 0) {
-    clearImageViewer();
+  if (identityError || !identity || identity.evaluator_id !== evaluatorId) {
+    await supabaseClient.auth.signOut();
+    status.textContent = "Evaluator identity verification failed.";
     return;
   }
 
-  const file = imageFiles[currentImageIndex];
-  const imageId = getImageIdFromFileName(file.name);
-
-  if (currentImageObjectUrl) {
-    URL.revokeObjectURL(currentImageObjectUrl);
-  }
-
-  currentImageObjectUrl = URL.createObjectURL(file);
-
-  const radiographImage =
-    document.getElementById("radiographImage");
-
-  const imageProgress =
-    document.getElementById("imageProgress");
-
-  const imageIdInput =
-    document.getElementById("imageId");
-
-  if (radiographImage) {
-    radiographImage.onload = function () {
-      radiographImage.classList.add("has-image");
-    };
-
-    radiographImage.onerror = function () {
-      radiographImage.classList.remove("has-image");
-
-      alert(
-        "This file cannot be displayed by the browser: " +
-        file.name
-      );
-    };
-
-    radiographImage.src = currentImageObjectUrl;
-  }
-
-  if (imageProgress) {
-    imageProgress.textContent =
-      "Image " +
-      (currentImageIndex + 1) +
-      " of " +
-      imageFiles.length +
-      " | " +
-      imageId;
-  }
-
-  if (imageIdInput) {
-    imageIdInput.value = imageId;
-  }
-
-  clearAssessmentFields();
-  loadExistingAssessmentForCurrentImage();
-  updateProgressDashboard();
+  await startStudy(data.user.id, evaluatorId);
 }
 
-function clearImageViewer() {
-  const radiographImage =
-    document.getElementById("radiographImage");
+async function restoreSession() {
+  const { data, error } = await supabaseClient.auth.getUser();
+  if (error || !data.user) return;
 
-  const imageProgress =
-    document.getElementById("imageProgress");
+  const { data: identity, error: identityError } = await supabaseClient
+    .from("evaluators")
+    .select("evaluator_id")
+    .eq("user_id", data.user.id)
+    .single();
 
-  const imageIdInput =
-    document.getElementById("imageId");
-
-  if (currentImageObjectUrl) {
-    URL.revokeObjectURL(currentImageObjectUrl);
-    currentImageObjectUrl = null;
-  }
-
-  if (radiographImage) {
-    radiographImage.removeAttribute("src");
-    radiographImage.classList.remove("has-image");
-  }
-
-  if (imageProgress) {
-    imageProgress.textContent = "No image loaded";
-  }
-
-  if (imageIdInput) {
-    imageIdInput.value = "";
-  }
-
-  updateProgressDashboard();
+  if (identityError || !identity) return;
+  await startStudy(data.user.id, identity.evaluator_id);
 }
 
-function getImageIdFromFileName(fileName) {
-  return fileName.replace(/\.[^/.]+$/, "");
-}
+async function startStudy(userId, evaluatorId) {
+  currentUserId = userId;
+  currentEvaluatorId = evaluatorId;
+  appReady = false;
 
-function showPreviousImage() {
-  if (imageFiles.length === 0) {
-    alert("Please upload radiograph images first.");
-    return;
-  }
+  setValue("evaluatorId", evaluatorId);
+  const evaluatorInput = document.getElementById("evaluatorId");
+  if (evaluatorInput) evaluatorInput.readOnly = true;
 
-  if (currentImageIndex > 0) {
-    currentImageIndex--;
-    showCurrentImage();
-  }
-}
-
-function showNextImage() {
-  if (imageFiles.length === 0) {
-    alert("Please upload radiograph images first.");
-    return;
-  }
-
-  if (currentImageIndex < imageFiles.length - 1) {
-    currentImageIndex++;
-    showCurrentImage();
-  }
-}
-
-function jumpToImage() {
-  if (imageFiles.length === 0) {
-    alert("Please upload radiograph images first.");
-    return;
-  }
-
-  const jumpInput =
-    document.getElementById("jumpImageNumber");
-
-  if (!jumpInput) {
-    alert("Jump input not found.");
-    return;
-  }
-
-  const imageNumber = Number(jumpInput.value);
-
-  if (
-    !imageNumber ||
-    imageNumber < 1 ||
-    imageNumber > imageFiles.length
-  ) {
-    alert(
-      "Please enter a valid image number between 1 and " +
-      imageFiles.length +
-      "."
-    );
-
-    return;
-  }
-
-  currentImageIndex = imageNumber - 1;
-  showCurrentImage();
-}
-
-function saveAssessment(showAlert) {
-  const assessment = {
-    evaluator_id: getValue("evaluatorId"),
-    participant_id: getValue("participantId"),
-    experience_years: getValue("experienceYears"),
-    specialty: getValue("specialty"),
-
-    image_id: getValue("imageId"),
-    target_tooth: getValue("targetTooth"),
-    image_quality: getValue("imageQuality"),
-    angulation: getValue("angulation"),
-    pell_ramus: getValue("pellRamus"),
-    pell_depth: getValue("pellDepth"),
-    overall_ian_risk: getValue("ianRisk"),
-    confidence_score: getValue("confidenceScore"),
-    comment: getValue("comment"),
-
-    saved_at: new Date().toISOString()
-  };
-
-  if (!assessment.evaluator_id) {
-    alert("Please complete Evaluator ID before saving.");
-    return false;
-  }
-
-  if (!assessment.image_id) {
-    alert(
-      "Please upload or select a radiograph image before saving."
-    );
-
-    return false;
-  }
-
-  if (!assessment.target_tooth) {
-    alert("Please select Target Tooth before saving.");
-    return false;
-  }
+  document.getElementById("cloudEvaluatorText").textContent = "Evaluator: " + evaluatorId;
+  document.getElementById("cloudTopBar").style.display = "flex";
+  document.getElementById("cloudLoginOverlay").style.display = "none";
+  setCloudSaveText("Loading...");
 
   saveObserverInfo();
 
-  const existingData =
-    JSON.parse(
-      localStorage.getItem("radiograph_assessments")
-    ) || [];
+  const { data: dataset, error: datasetError } = await supabaseClient
+    .from("radiographs")
+    .select("id,image_order,image_id,file_name,storage_path")
+    .order("image_order", { ascending: true })
+    .range(0, 999);
 
-  const duplicateIndex =
-    existingData.findIndex(function (item) {
-      return (
-        item.evaluator_id === assessment.evaluator_id &&
-        item.image_id === assessment.image_id &&
-        item.target_tooth === assessment.target_tooth
-      );
-    });
-
-  if (duplicateIndex >= 0) {
-    existingData[duplicateIndex] = assessment;
-  } else {
-    existingData.push(assessment);
+  if (datasetError) {
+    alert("Cannot load radiographs:\n" + datasetError.message);
+    return;
   }
 
-  localStorage.setItem(
-    "radiograph_assessments",
-    JSON.stringify(existingData)
-  );
+  radiographs = dataset || [];
+  if (radiographs.length !== 1000) {
+    alert("Dataset error: expected 1000 radiographs, received " + radiographs.length + ".");
+    return;
+  }
 
-  markImageAsLabelled(assessment.image_id);
+  const { data: ownRows, error: assessmentError } = await supabaseClient
+    .from("assessments")
+    .select("*")
+    .eq("evaluator_user_id", currentUserId);
 
+  if (assessmentError) {
+    alert("Cannot load saved assessments:\n" + assessmentError.message);
+    return;
+  }
+
+  assessments.clear();
+  (ownRows || []).forEach(row => assessments.set(row.radiograph_id, row));
+
+  const firstDraft = radiographs.findIndex(img => {
+    const a = assessments.get(img.id);
+    return a && a.status === "draft";
+  });
+  const firstIncomplete = radiographs.findIndex(img => {
+    const a = assessments.get(img.id);
+    return !a || a.status !== "completed";
+  });
+
+  currentImageIndex = firstDraft >= 0 ? firstDraft : (firstIncomplete >= 0 ? firstIncomplete : 999);
+  appReady = true;
   updateSavedCount();
   updateProgressDashboard();
+  await showCurrentImage();
+}
 
-  if (showAlert) {
-    alert(
-      "Assessment saved successfully. Total saved records: " +
-      existingData.length
-    );
+async function logout() {
+  await flushAutosave();
+  await supabaseClient.auth.signOut();
+  appReady = false;
+  radiographs = [];
+  assessments.clear();
+  currentImageIndex = 0;
+  currentUserId = "";
+  currentEvaluatorId = "";
+  clearAssessmentFields();
+  document.getElementById("cloudTopBar").style.display = "none";
+  document.getElementById("cloudLoginOverlay").style.display = "flex";
+  document.getElementById("cloudPassword").value = "";
+  document.getElementById("cloudEvaluatorId").value = "";
+  document.getElementById("cloudLoginStatus").textContent = "Signed out.";
+}
+
+async function showCurrentImage() {
+  if (!appReady || !radiographs.length) return;
+
+  const record = radiographs[currentImageIndex];
+  const image = document.getElementById("radiographImage");
+  const progress = document.getElementById("imageProgress");
+
+  setValue("imageId", record.image_id);
+  if (progress) progress.textContent = `Image ${currentImageIndex + 1} of ${radiographs.length} | ${record.image_id}`;
+
+  clearAssessmentFields();
+  loadAssessmentToForm(record.id);
+  updateProgressDashboard();
+
+  if (!image) return;
+  image.classList.remove("has-image");
+
+  const { data, error } = await supabaseClient.storage
+    .from("radiographs")
+    .createSignedUrl(record.storage_path, 3600);
+
+  if (error) {
+    alert("Cannot load " + record.image_id + ":\n" + error.message);
+    return;
   }
 
+  image.onload = () => image.classList.add("has-image");
+  image.onerror = () => image.classList.remove("has-image");
+  image.src = data.signedUrl;
+  image.alt = "Panoramic radiograph " + record.image_id;
+}
+
+function bindButtons() {
+  bindClick("prevImageBtn", async function () {
+    if (!appReady || currentImageIndex <= 0) return;
+    await flushAutosave();
+    currentImageIndex--;
+    await showCurrentImage();
+  });
+
+  bindClick("nextImageBtn", async function () {
+    if (!appReady || currentImageIndex >= radiographs.length - 1) return;
+    await flushAutosave();
+    currentImageIndex++;
+    await showCurrentImage();
+  });
+
+  bindClick("jumpImageBtn", async function () {
+    if (!appReady) return;
+    const n = Number(getValue("jumpImageNumber"));
+    if (!Number.isInteger(n) || n < 1 || n > radiographs.length) {
+      alert("Enter an image number between 1 and " + radiographs.length + ".");
+      return;
+    }
+    await flushAutosave();
+    currentImageIndex = n - 1;
+    await showCurrentImage();
+  });
+
+  bindClick("saveAssessmentBtn", async function () {
+    await completeCurrentAssessment(true);
+  });
+
+  bindClick("saveNextBtn", async function () {
+    const ok = await completeCurrentAssessment(false);
+    if (!ok) return;
+    if (currentImageIndex < radiographs.length - 1) {
+      currentImageIndex++;
+      await showCurrentImage();
+    }
+  });
+
+  bindClick("nextUnsavedBtn", async function () {
+    await flushAutosave();
+    for (let step = 1; step <= radiographs.length; step++) {
+      const i = (currentImageIndex + step) % radiographs.length;
+      const a = assessments.get(radiographs[i].id);
+      if (!a || a.status !== "completed") {
+        currentImageIndex = i;
+        await showCurrentImage();
+        return;
+      }
+    }
+    alert("All 1000 radiographs are completed.");
+  });
+
+  bindClick("exportCsvBtn", exportAssessmentsAsCSV);
+  bindClick("exportBackupBtn", exportBackupJSON);
+}
+
+function bindAutosave() {
+  FIELD_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener(el.tagName === "TEXTAREA" ? "input" : "change", scheduleDraftAutosave);
+  });
+
+  ["participantId", "experienceYears", "specialty"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("change", saveObserverInfo);
+  });
+}
+
+function scheduleDraftAutosave() {
+  if (!appReady) return;
+  setCloudSaveText("Saving draft...");
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(saveDraft, 800);
+}
+
+async function flushAutosave() {
+  if (!autosaveTimer) return;
+  clearTimeout(autosaveTimer);
+  autosaveTimer = null;
+  await saveDraft();
+}
+
+function assessmentPayload(status) {
+  const r = radiographs[currentImageIndex];
+  return {
+    evaluator_user_id: currentUserId,
+    radiograph_id: r.id,
+    target_tooth: emptyToNull(getValue("targetTooth")),
+    image_quality: emptyToNull(getValue("imageQuality")),
+    angulation: emptyToNull(getValue("angulation")),
+    pell_ramus: emptyToNull(getValue("pellRamus")),
+    pell_depth: emptyToNull(getValue("pellDepth")),
+    overall_ian_risk: emptyToNull(getValue("ianRisk")),
+    confidence_score: getValue("confidenceScore") ? Number(getValue("confidenceScore")) : null,
+    comment: emptyToNull(getValue("comment")),
+    status,
+    completed_at: status === "completed" ? new Date().toISOString() : null
+  };
+}
+
+async function saveDraft() {
+  if (!appReady) return false;
+
+  const { data, error } = await supabaseClient
+    .from("assessments")
+    .upsert(assessmentPayload("draft"), { onConflict: "evaluator_user_id,radiograph_id" })
+    .select()
+    .single();
+
+  if (error) {
+    console.error(error);
+    setCloudSaveText("Save failed");
+    return false;
+  }
+
+  assessments.set(data.radiograph_id, data);
+  setCloudSaveText("Draft saved");
+  updateSavedCount();
+  updateProgressDashboard();
   return true;
 }
 
-function saveAndNextImage() {
-  const saved = saveAssessment(false);
+async function completeCurrentAssessment(showAlert) {
+  await flushAutosave();
 
-  if (!saved) {
-    return;
-  }
-
-  if (imageFiles.length === 0) {
-    return;
-  }
-
-  if (currentImageIndex < imageFiles.length - 1) {
-    currentImageIndex++;
-    showCurrentImage();
-  } else {
-    alert("Assessment saved. This is the last image.");
-  }
-}
-
-function goToNextUnsavedImage() {
-  if (imageFiles.length === 0) {
-    alert("Please upload radiograph images first.");
-    return;
-  }
-
-  const evaluatorId = getValue("evaluatorId");
-
-  if (!evaluatorId) {
-    alert("Please complete Evaluator ID first.");
-    return;
-  }
-
-  const existingData =
-    JSON.parse(
-      localStorage.getItem("radiograph_assessments")
-    ) || [];
-
-  const savedImageIds = new Set(
-    existingData
-      .filter(function (record) {
-        return record.evaluator_id === evaluatorId;
-      })
-      .map(function (record) {
-        return record.image_id;
-      })
-  );
-
-  for (
-    let step = 1;
-    step <= imageFiles.length;
-    step++
-  ) {
-    const nextIndex =
-      (currentImageIndex + step) % imageFiles.length;
-
-    const nextImageId =
-      getImageIdFromFileName(
-        imageFiles[nextIndex].name
-      );
-
-    if (!savedImageIds.has(nextImageId)) {
-      currentImageIndex = nextIndex;
-      showCurrentImage();
-      return;
-    }
-  }
-
-  alert(
-    "All uploaded images have been saved for this Evaluator ID."
-  );
-}
-
-function loadExistingAssessmentForCurrentImage() {
-  const evaluatorId = getValue("evaluatorId");
-  const imageId = getValue("imageId");
-
-  if (!evaluatorId || !imageId) {
-    return;
-  }
-
-  const existingData =
-    JSON.parse(
-      localStorage.getItem("radiograph_assessments")
-    ) || [];
-
-  const existingRecord =
-    existingData.find(function (item) {
-      return (
-        item.evaluator_id === evaluatorId &&
-        item.image_id === imageId
-      );
-    });
-
-  if (!existingRecord) {
-    return;
-  }
-
-  setValue(
-    "targetTooth",
-    existingRecord.target_tooth
-  );
-
-  setValue(
-    "imageQuality",
-    existingRecord.image_quality
-  );
-
-  setValue(
-    "angulation",
-    existingRecord.angulation
-  );
-
-  setValue(
-    "pellRamus",
-    existingRecord.pell_ramus
-  );
-
-  setValue(
-    "pellDepth",
-    existingRecord.pell_depth
-  );
-
-  setValue(
-    "ianRisk",
-    existingRecord.overall_ian_risk
-  );
-
-  setValue(
-    "confidenceScore",
-    existingRecord.confidence_score
-  );
-
-  setValue(
-    "comment",
-    existingRecord.comment
-  );
-}
-
-function clearAssessmentFields() {
-  setValue("targetTooth", "");
-  setValue("imageQuality", "");
-  setValue("angulation", "");
-  setValue("pellRamus", "");
-  setValue("pellDepth", "");
-  setValue("ianRisk", "");
-  setValue("confidenceScore", "");
-  setValue("comment", "");
-}
-
-function exportAssessmentsAsCSV() {
-  const exportConfirmed = confirm(
-    "Are you sure you want to export the CSV file?\n\n" +
-    "The exported file will include both labelled and unlabelled radiographs."
-  );
-
-  if (!exportConfirmed) {
-    return;
-  }
-
-  const manifest =
-    JSON.parse(
-      localStorage.getItem("radiograph_image_manifest")
-    ) || [];
-
-  const assessments =
-    JSON.parse(
-      localStorage.getItem("radiograph_assessments")
-    ) || [];
-
-  if (manifest.length === 0) {
-    alert(
-      "No uploaded radiograph records are available to export."
-    );
-
-    return;
-  }
-
-  const evaluatorId = getValue("evaluatorId");
-
-  const evaluatorAssessments = evaluatorId
-    ? assessments.filter(function (record) {
-        return record.evaluator_id === evaluatorId;
-      })
-    : assessments;
-
-  const assessmentMap = new Map();
-
-  evaluatorAssessments.forEach(function (record) {
-    assessmentMap.set(record.image_id, record);
-  });
-
-  const headers = [
-    "evaluator_id",
-    "image_id",
-    "file_name",
-    "upload_order",
-    "label_status",
-    "target_tooth",
-    "image_quality",
-    "angulation",
-    "pell_ramus",
-    "pell_depth",
-    "overall_ian_risk",
-    "confidence_score",
-    "comment",
-    "saved_at"
+  const required = [
+    ["targetTooth", "Target Tooth"],
+    ["imageQuality", "Image Quality"],
+    ["angulation", "Angulation"],
+    ["pellRamus", "Pell & Gregory Ramus"],
+    ["pellDepth", "Pell & Gregory Depth"],
+    ["ianRisk", "IAN Risk"],
+    ["confidenceScore", "Confidence Score"]
   ];
 
-  const csvRows = [headers.join(",")];
+  const missing = required.filter(([id]) => !getValue(id)).map(([,name]) => "• " + name);
+  if (missing.length) {
+    alert("Complete these fields before marking the image complete:\n\n" + missing.join("\n"));
+    return false;
+  }
 
-  manifest.forEach(function (imageRecord) {
-    const assessment =
-      assessmentMap.get(imageRecord.image_id) || {};
+  setCloudSaveText("Saving...");
 
-    const row = {
-      evaluator_id:
-        assessment.evaluator_id ||
-        evaluatorId ||
-        "",
+  const { data, error } = await supabaseClient
+    .from("assessments")
+    .upsert(assessmentPayload("completed"), { onConflict: "evaluator_user_id,radiograph_id" })
+    .select()
+    .single();
 
-      image_id: imageRecord.image_id,
-      file_name: imageRecord.file_name,
-      upload_order: imageRecord.upload_order,
+  if (error) {
+    console.error(error);
+    setCloudSaveText("Save failed");
+    alert("Assessment could not be saved:\n" + error.message);
+    return false;
+  }
 
-      label_status:
-        assessment.image_id
-          ? "Labelled"
-          : "Unlabelled",
-
-      target_tooth:
-        assessment.target_tooth || "",
-
-      image_quality:
-        assessment.image_quality || "",
-
-      angulation:
-        assessment.angulation || "",
-
-      pell_ramus:
-        assessment.pell_ramus || "",
-
-      pell_depth:
-        assessment.pell_depth || "",
-
-      overall_ian_risk:
-        assessment.overall_ian_risk || "",
-
-      confidence_score:
-        assessment.confidence_score || "",
-
-      comment:
-        assessment.comment || "",
-
-      saved_at:
-        assessment.saved_at || ""
-    };
-
-    csvRows.push(
-      headers
-        .map(function (header) {
-          return escapeCSV(row[header]);
-        })
-        .join(",")
-    );
-  });
-
-  const csvContent =
-    "\uFEFF" + csvRows.join("\n");
-
-  const blob = new Blob(
-    [csvContent],
-    {
-      type: "text/csv;charset=utf-8;"
-    }
-  );
-
-  const fileEvaluatorId =
-    evaluatorId || "unknown_evaluator";
-
-  const today =
-    new Date().toISOString().slice(0, 10);
-
-  const fileName =
-    fileEvaluatorId +
-    "_radiograph_registry_and_assessment_" +
-    today +
-    ".csv";
-
-  const downloadUrl =
-    URL.createObjectURL(blob);
-
-  const downloadLink =
-    document.createElement("a");
-
-  downloadLink.href = downloadUrl;
-  downloadLink.download = fileName;
-
-  document.body.appendChild(downloadLink);
-  downloadLink.click();
-  downloadLink.remove();
-
-  URL.revokeObjectURL(downloadUrl);
+  assessments.set(data.radiograph_id, data);
+  setCloudSaveText("Completed ✓");
+  updateSavedCount();
+  updateProgressDashboard();
+  if (showAlert) alert("Assessment completed and saved.");
+  return true;
 }
 
-function escapeCSV(value) {
-  const stringValue =
-    String(value ?? "").replace(/"/g, '""');
-
-  return '"' + stringValue + '"';
-}
-
-async function clearSavedData() {
-  const typedConfirmation = prompt(
-    "Are you sure you want to delete all saved assessment data and locally saved radiograph images from this browser?\n\n" +
-    "This action cannot be undone.\n\n" +
-    "Type DELETE to confirm."
-  );
-
-  if (typedConfirmation !== "DELETE") {
-    alert("Clear saved data was cancelled.");
+function loadAssessmentToForm(radiographId) {
+  const a = assessments.get(radiographId);
+  if (!a) {
+    setCloudSaveText("Not saved");
     return;
   }
 
-  try {
-    localStorage.removeItem(
-      "radiograph_assessments"
-    );
-
-    localStorage.removeItem(
-      "radiograph_image_manifest"
-    );
-
-    localStorage.removeItem(
-      "observer_info"
-    );
-
-    await deleteAllRadiographFilesFromDB();
-
-    imageFiles = [];
-    currentImageIndex = 0;
-
-    clearAssessmentFields();
-    clearImageViewer();
-    restoreObserverInfo();
-    updateSavedCount();
-    updateProgressDashboard();
-
-    alert(
-      "All saved assessments, image records, and locally stored radiograph images were cleared."
-    );
-  } catch (error) {
-    console.error("Clear data error:", error);
-
-    alert(
-      "Some saved data could not be cleared.\n\n" +
-      "Error: " +
-      (error.message || "Unknown error")
-    );
-  }
+  setValue("targetTooth", a.target_tooth);
+  setValue("imageQuality", a.image_quality);
+  setValue("angulation", a.angulation);
+  setValue("pellRamus", a.pell_ramus);
+  setValue("pellDepth", a.pell_depth);
+  setValue("ianRisk", a.overall_ian_risk);
+  setValue("confidenceScore", a.confidence_score);
+  setValue("comment", a.comment);
+  setCloudSaveText(a.status === "completed" ? "Completed ✓" : "Draft saved");
 }
 
 function updateSavedCount() {
-  const existingData =
-    JSON.parse(
-      localStorage.getItem("radiograph_assessments")
-    ) || [];
+  const completed = Array.from(assessments.values()).filter(a => a.status === "completed").length;
+  const el = document.getElementById("savedCount");
+  if (el) el.textContent = `Completed records: ${completed} / ${radiographs.length}`;
+}
 
-  const savedCount =
-    document.getElementById("savedCount");
+function updateProgressDashboard() {
+  const completedIds = new Set(
+    Array.from(assessments.values())
+      .filter(a => a.status === "completed")
+      .map(a => a.radiograph_id)
+  );
 
-  if (savedCount) {
-    savedCount.textContent =
-      "Saved records: " + existingData.length;
+  setText("savedImageCount", completedIds.size);
+  setText("remainingImageCount", Math.max(radiographs.length - completedIds.size, 0));
+
+  const current = radiographs[currentImageIndex];
+  const a = current ? assessments.get(current.id) : null;
+  const status = document.getElementById("currentSaveStatus");
+  if (status) {
+    status.textContent = a ? (a.status === "completed" ? "Completed" : "Draft saved") : "Not saved";
+    status.className = a && a.status === "completed" ? "saved" : "unsaved";
   }
 }
 
-function saveObserverInfo() {
-  const observerInfo = {
-    evaluator_id: getValue("evaluatorId"),
-    participant_id: getValue("participantId"),
-    experience_years: getValue("experienceYears"),
-    specialty: getValue("specialty")
-  };
+function exportAssessmentsAsCSV() {
+  if (!appReady) return;
 
-  localStorage.setItem(
-    "observer_info",
-    JSON.stringify(observerInfo)
-  );
-}
+  const headers = [
+    "evaluator_id","image_order","image_id","file_name","status",
+    "target_tooth","image_quality","angulation","pell_ramus","pell_depth",
+    "overall_ian_risk","confidence_score","comment","created_at","updated_at","completed_at"
+  ];
 
-function restoreObserverInfo() {
-  const observerInfo =
-    JSON.parse(
-      localStorage.getItem("observer_info")
-    ) || {};
+  const lines = [headers.join(",")];
+  radiographs.forEach(r => {
+    const a = assessments.get(r.id) || {};
+    const row = {
+      evaluator_id: currentEvaluatorId,
+      image_order: r.image_order,
+      image_id: r.image_id,
+      file_name: r.file_name,
+      status: a.status || "unlabelled",
+      target_tooth: a.target_tooth || "",
+      image_quality: a.image_quality || "",
+      angulation: a.angulation || "",
+      pell_ramus: a.pell_ramus || "",
+      pell_depth: a.pell_depth || "",
+      overall_ian_risk: a.overall_ian_risk || "",
+      confidence_score: a.confidence_score || "",
+      comment: a.comment || "",
+      created_at: a.created_at || "",
+      updated_at: a.updated_at || "",
+      completed_at: a.completed_at || ""
+    };
+    lines.push(headers.map(h => csv(row[h])).join(","));
+  });
 
-  setValue(
-    "evaluatorId",
-    observerInfo.evaluator_id
-  );
-
-  setValue(
-    "participantId",
-    observerInfo.participant_id
-  );
-
-  setValue(
-    "experienceYears",
-    observerInfo.experience_years
-  );
-
-  setValue(
-    "specialty",
-    observerInfo.specialty
+  downloadBlob(
+    new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8;" }),
+    currentEvaluatorId + "_radiograph_assessment_" + new Date().toISOString().slice(0,10) + ".csv"
   );
 }
 
 function exportBackupJSON() {
-  const existingData =
-    JSON.parse(
-      localStorage.getItem("radiograph_assessments")
-    ) || [];
-
-  const observerInfo =
-    JSON.parse(
-      localStorage.getItem("observer_info")
-    ) || {};
-
-  const imageManifest =
-    JSON.parse(
-      localStorage.getItem("radiograph_image_manifest")
-    ) || [];
-
-  if (
-    existingData.length === 0 &&
-    imageManifest.length === 0
-  ) {
-    alert(
-      "No registered images or saved assessment data to back up."
-    );
-
-    return;
-  }
-
-  const backupData = {
-    project:
-      "Radiograph Gold Standard Platform",
-
-    export_type:
-      "backup_json",
-
-    exported_at:
-      new Date().toISOString(),
-
-    observer_info:
-      observerInfo,
-
-    image_manifest:
-      imageManifest,
-
-    assessments:
-      existingData,
-
-    note:
-      "This JSON backup does not contain the radiograph image files stored in IndexedDB."
+  if (!appReady) return;
+  const payload = {
+    project: "Radiograph Gold Standard Platform",
+    evaluator_id: currentEvaluatorId,
+    exported_at: new Date().toISOString(),
+    total_radiographs: radiographs.length,
+    observer_info: JSON.parse(localStorage.getItem("observer_info")) || {},
+    assessments: Array.from(assessments.values())
   };
-
-  const blob = new Blob(
-    [JSON.stringify(backupData, null, 2)],
-    {
-      type: "application/json"
-    }
+  downloadBlob(
+    new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }),
+    currentEvaluatorId + "_backup_" + new Date().toISOString().slice(0,10) + ".json"
   );
-
-  const evaluatorId =
-    getValue("evaluatorId") ||
-    "unknown_evaluator";
-
-  const today =
-    new Date().toISOString().slice(0, 10);
-
-  const fileName =
-    evaluatorId +
-    "_backup_" +
-    today +
-    ".json";
-
-  const downloadUrl =
-    URL.createObjectURL(blob);
-
-  const downloadLink =
-    document.createElement("a");
-
-  downloadLink.href = downloadUrl;
-  downloadLink.download = fileName;
-
-  document.body.appendChild(downloadLink);
-  downloadLink.click();
-  downloadLink.remove();
-
-  URL.revokeObjectURL(downloadUrl);
 }
 
-function importBackupJSON(event) {
-  const file = event.target.files[0];
-
-  if (!file) {
-    return;
-  }
-
-  const reader = new FileReader();
-
-  reader.onload = function (e) {
-    try {
-      const backupData =
-        JSON.parse(e.target.result);
-
-      if (
-        !backupData.assessments ||
-        !Array.isArray(
-          backupData.assessments
-        )
-      ) {
-        alert(
-          "Invalid backup file: assessments data is missing."
-        );
-
-        return;
-      }
-
-      localStorage.setItem(
-        "radiograph_assessments",
-        JSON.stringify(
-          backupData.assessments
-        )
-      );
-
-      if (backupData.observer_info) {
-        localStorage.setItem(
-          "observer_info",
-          JSON.stringify(
-            backupData.observer_info
-          )
-        );
-      }
-
-      if (
-        backupData.image_manifest &&
-        Array.isArray(
-          backupData.image_manifest
-        )
-      ) {
-        localStorage.setItem(
-          "radiograph_image_manifest",
-          JSON.stringify(
-            backupData.image_manifest
-          )
-        );
-      }
-
-      restoreObserverInfo();
-      updateSavedCount();
-      updateProgressDashboard();
-      updateUploadedImageCount();
-
-      alert(
-        "Backup imported successfully.\n\n" +
-        "Registered images: " +
-        (
-          Array.isArray(
-            backupData.image_manifest
-          )
-            ? backupData.image_manifest.length
-            : 0
-        ) +
-        "\nSaved assessments: " +
-        backupData.assessments.length +
-        "\n\nThe JSON backup does not include the radiograph image files."
-      );
-    } catch (error) {
-      console.error(
-        "Backup import error:",
-        error
-      );
-
-      alert(
-        "Cannot import backup file. Please check that the selected file is a valid JSON backup."
-      );
-    }
-  };
-
-  reader.onerror = function () {
-    alert(
-      "Cannot read the selected backup file."
-    );
-  };
-
-  reader.readAsText(file);
-  event.target.value = "";
+function saveObserverInfo() {
+  localStorage.setItem("observer_info", JSON.stringify({
+    participant_id: getValue("participantId"),
+    experience_years: getValue("experienceYears"),
+    specialty: getValue("specialty")
+  }));
 }
 
-function updateProgressDashboard() {
-  const existingData =
-    JSON.parse(
-      localStorage.getItem("radiograph_assessments")
-    ) || [];
-
-  const manifest =
-    JSON.parse(
-      localStorage.getItem("radiograph_image_manifest")
-    ) || [];
-
-  const evaluatorId = getValue("evaluatorId");
-
-  let savedForEvaluator = existingData;
-
-  if (evaluatorId) {
-    savedForEvaluator =
-      existingData.filter(function (record) {
-        return (
-          record.evaluator_id === evaluatorId
-        );
-      });
-  }
-
-  const savedImageIds = new Set(
-    savedForEvaluator.map(function (record) {
-      return record.image_id;
-    })
-  );
-
-  const savedCount = savedImageIds.size;
-
-  const totalImages =
-    imageFiles.length > 0
-      ? imageFiles.length
-      : manifest.length;
-
-  const remainingCount =
-    totalImages > 0
-      ? Math.max(
-          totalImages - savedCount,
-          0
-        )
-      : 0;
-
-  setText(
-    "savedImageCount",
-    savedCount
-  );
-
-  setText(
-    "remainingImageCount",
-    remainingCount
-  );
-
-  const currentSaveStatusElement =
-    document.getElementById(
-      "currentSaveStatus"
-    );
-
-  if (currentSaveStatusElement) {
-    const currentImageId =
-      getValue("imageId");
-
-    const isCurrentSaved =
-      savedImageIds.has(currentImageId);
-
-    currentSaveStatusElement.textContent =
-      isCurrentSaved
-        ? "Saved"
-        : "Not saved";
-
-    currentSaveStatusElement.className =
-      isCurrentSaved
-        ? "saved"
-        : "unsaved";
-  }
+function restoreObserverInfo() {
+  const x = JSON.parse(localStorage.getItem("observer_info")) || {};
+  setValue("participantId", x.participant_id);
+  setValue("experienceYears", x.experience_years);
+  setValue("specialty", x.specialty);
 }
 
-function setJavaScriptStatus(text) {
-  const jsStatus =
-    document.getElementById("jsStatus");
-
-  if (jsStatus) {
-    jsStatus.textContent = text;
-  }
+function clearAssessmentFields() {
+  FIELD_IDS.forEach(id => setValue(id, ""));
 }
 
-function registerUploadedImages(files) {
-  const existingManifest =
-    JSON.parse(
-      localStorage.getItem("radiograph_image_manifest")
-    ) || [];
-
-  const existingAssessments =
-    JSON.parse(
-      localStorage.getItem("radiograph_assessments")
-    ) || [];
-
-  const manifestMap = new Map();
-
-  existingManifest.forEach(function (item) {
-    manifestMap.set(item.image_id, item);
-  });
-
-  files.forEach(function (file, index) {
-    const imageId =
-      getImageIdFromFileName(file.name);
-
-    const hasAssessment =
-      existingAssessments.some(
-        function (assessment) {
-          return (
-            assessment.image_id === imageId
-          );
-        }
-      );
-
-    const previousRecord =
-      manifestMap.get(imageId);
-
-    manifestMap.set(imageId, {
-      image_id: imageId,
-      file_name: file.name,
-      file_type: file.type || "",
-      file_size_bytes: file.size || 0,
-      upload_order: index + 1,
-
-      label_status:
-        hasAssessment
-          ? "Labelled"
-          : "Unlabelled",
-
-      first_registered_at:
-        previousRecord
-          ? previousRecord.first_registered_at
-          : new Date().toISOString(),
-
-      last_selected_at:
-        new Date().toISOString()
-    });
-  });
-
-  const updatedManifest =
-    Array.from(manifestMap.values());
-
-  updatedManifest.sort(function (a, b) {
-    return a.file_name.localeCompare(
-      b.file_name,
-      undefined,
-      { numeric: true }
-    );
-  });
-
-  updatedManifest.forEach(
-    function (item, index) {
-      item.upload_order = index + 1;
-    }
-  );
-
-  localStorage.setItem(
-    "radiograph_image_manifest",
-    JSON.stringify(updatedManifest)
-  );
-
-  updateUploadedImageCount();
+function bindClick(id, fn) {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener("click", fn);
 }
 
-function updateUploadedImageCount() {
-  const manifest =
-    JSON.parse(
-      localStorage.getItem("radiograph_image_manifest")
-    ) || [];
-
-  const imageProgress =
-    document.getElementById("imageProgress");
-
-  if (
-    imageFiles.length === 0 &&
-    imageProgress
-  ) {
-    imageProgress.textContent =
-      "No image currently loaded | " +
-      manifest.length +
-      " images previously registered";
-  }
-
-  updateProgressDashboard();
-}
-
-function markImageAsLabelled(imageId) {
-  const manifest =
-    JSON.parse(
-      localStorage.getItem("radiograph_image_manifest")
-    ) || [];
-
-  const updatedManifest =
-    manifest.map(function (item) {
-      if (item.image_id === imageId) {
-        return {
-          ...item,
-          label_status: "Labelled",
-          last_labelled_at:
-            new Date().toISOString()
-        };
-      }
-
-      return item;
-    });
-
-  localStorage.setItem(
-    "radiograph_image_manifest",
-    JSON.stringify(updatedManifest)
-  );
+function setCloudSaveText(text) {
+  const el = document.getElementById("cloudSaveText");
+  if (el) el.textContent = text;
 }
 
 function getValue(id) {
-  const element =
-    document.getElementById(id);
-
-  return element
-    ? String(element.value || "").trim()
-    : "";
+  const el = document.getElementById(id);
+  return el ? String(el.value || "").trim() : "";
 }
 
 function setValue(id, value) {
-  const element =
-    document.getElementById(id);
-
-  if (element) {
-    element.value = value || "";
-  }
+  const el = document.getElementById(id);
+  if (el) el.value = value ?? "";
 }
 
 function setText(id, value) {
-  const element =
-    document.getElementById(id);
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
 
-  if (element) {
-    element.textContent = value;
-  }
+function setJavaScriptStatus(text) {
+  const el = document.getElementById("jsStatus");
+  if (el) el.textContent = text;
+}
+
+function emptyToNull(v) {
+  return v === "" ? null : v;
+}
+
+function csv(v) {
+  return '"' + String(v ?? "").replace(/"/g, '""') + '"';
+}
+
+function downloadBlob(blob, fileName) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
