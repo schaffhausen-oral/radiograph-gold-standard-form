@@ -615,3 +615,9 @@ button:focus-visible {
 #jsStatus {
   display: none !important;
 }
+#clearDataBtn,
+#importBackupBtn,
+#backupFileInput,
+#jsStatus {
+  display: none !important;
+}
