@@ -451,6 +451,7 @@ function updateProgressDashboard() {
 
   setText("savedImageCount", completedIds.size);
   setText("remainingImageCount", Math.max(radiographs.length - completedIds.size, 0));
+  checkStudyCompletion(completed);
 
   const current = radiographs[currentImageIndex];
   const a = current ? assessments.get(current.id) : null;
