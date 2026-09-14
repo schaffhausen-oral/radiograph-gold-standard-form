@@ -343,18 +343,67 @@
         </div>
     </section>
 
-  </main>
+    </main>
 
-  <p id="jsStatus" class="small-note">JavaScript status: not loaded</p>
+  <p id="jsStatus" class="small-note">
+    JavaScript status: not loaded
+  </p>
 
-  <script>
-    document.getElementById("jsStatus").textContent = "Inline JavaScript works, waiting for app.js";
-  </script>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./supabase-config.js"></script>
-<script src="./participant-auth-config.js"></script>
-<script src="./app.js?v=cloud-final-001"></script>
+  <!-- ========================================= -->
+  <!-- STUDY COMPLETION SCREEN -->
+  <!-- ========================================= -->
+
+  <div
+    id="studyCompletionOverlay"
+    class="study-completion-overlay"
+  >
+
+    <div class="study-completion-card">
+
+      <div class="completion-icon">
+        ✓
+      </div>
+
+      <h1>การประเมินเสร็จสมบูรณ์</h1>
+
+      <p class="completion-main-text">
+        ท่านได้ทำการประเมินภาพรังสีพาโนรามาครบทั้งหมดแล้ว
+      </p>
+
+      <div class="completion-number">
+        1000 / 1000
+      </div>
+
+      <p>
+        ข้อมูลการประเมินของท่านได้รับการบันทึกในระบบเรียบร้อยแล้ว
+      </p>
+
+      <p class="completion-thank-you">
+        ขอขอบพระคุณสำหรับความร่วมมือในการเข้าร่วมโครงการวิจัย
+      </p>
+
+      <button
+        type="button"
+        id="completionCloseBtn"
+        class="completion-close-btn"
+      >
+        กลับไปตรวจสอบข้อมูล
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- ========================================= -->
+  <!-- JAVASCRIPT -->
+  <!-- ========================================= -->
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./supabase-config.js"></script>
+  <script src="./participant-auth-config.js"></script>
+  <script src="./app.js?v=cloud-final-002"></script>
+
 </body>
 </html>
-
