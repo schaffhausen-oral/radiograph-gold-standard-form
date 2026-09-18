@@ -4,384 +4,1284 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Radiograph Gold Standard Form</title>
+
   <link rel="stylesheet" href="style.css" />
+
+  <!--
+    Critical viewer CSS.
+    ใส่ไว้ใน index.html โดยตรงเพื่อป้องกัน style.css เก่าซ่อนภาพ
+  -->
+  <style>
+
+    .participant-instruction-card {
+      margin: 0 0 24px;
+      padding: 24px 28px;
+      background: #ffffff;
+      border: 1px solid rgba(92, 74, 180, 0.18);
+      border-radius: 18px;
+      box-shadow: 0 8px 28px rgba(35, 28, 90, 0.08);
+    }
+
+    .participant-instruction-card h2 {
+      margin-top: 0;
+      margin-bottom: 12px;
+    }
+
+    .participant-instruction-card > p {
+      color: #555;
+      line-height: 1.7;
+    }
+
+    .participant-instruction-list {
+      padding-left: 24px;
+      line-height: 1.75;
+    }
+
+    .participant-instruction-list li {
+      margin-bottom: 11px;
+    }
+
+    .participant-important-note {
+      margin-top: 20px;
+      padding: 15px 18px;
+      border-radius: 12px;
+      background: rgba(105, 86, 210, 0.08);
+      line-height: 1.65;
+    }
+
+
+    /* =====================================================
+       RADIOGRAPH VIEWER
+       ===================================================== */
+
+    .radiograph-display-container {
+      position: relative !important;
+
+      width: 100% !important;
+      min-height: 420px !important;
+
+      margin: 18px 0 22px !important;
+
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+
+      overflow: hidden !important;
+
+      background: #050505 !important;
+
+      border:
+        1px solid rgba(110, 86, 255, 0.35) !important;
+
+      border-radius: 16px !important;
+    }
+
+
+    #radiographImage.radiograph-image {
+      display: block !important;
+
+      visibility: visible !important;
+      opacity: 1 !important;
+
+      position: relative !important;
+
+      width: 100% !important;
+      max-width: 100% !important;
+
+      height: auto !important;
+      max-height: 720px !important;
+
+      object-fit: contain !important;
+
+      margin: 0 auto !important;
+
+      background: #000 !important;
+
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+
+    #radiographImage:not([src]) {
+      min-height: 420px !important;
+    }
+
+
+    .radiograph-loading {
+      position: absolute;
+
+      left: 50%;
+      top: 50%;
+
+      transform: translate(-50%, -50%);
+
+      z-index: 2;
+
+      color: #f2f2f2;
+
+      font-size: 15px;
+      font-weight: 700;
+
+      text-align: center;
+
+      pointer-events: none;
+    }
+
+
+    .radiograph-error {
+      margin: 12px 0;
+
+      padding: 12px 14px;
+
+      border: 1px solid #d33;
+      border-radius: 10px;
+
+      background: #fff4f4;
+
+      color: #a40000;
+
+      white-space: pre-line;
+
+      line-height: 1.5;
+    }
+
+
+    .retry-image-row {
+      display: flex;
+
+      justify-content: center;
+
+      margin-top: -8px;
+      margin-bottom: 18px;
+    }
+
+
+    .retry-image-row button {
+      width: auto;
+      min-width: 160px;
+    }
+
+
+    /* =====================================================
+       COMPLETION SCREEN
+       ===================================================== */
+
+    .study-completion-overlay {
+      position: fixed;
+
+      inset: 0;
+
+      z-index: 999999;
+
+      display: none;
+
+      align-items: center;
+      justify-content: center;
+
+      padding: 24px;
+
+      background:
+        rgba(15, 16, 35, 0.84);
+
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+
+    .study-completion-overlay.show {
+      display: flex;
+    }
+
+
+    .study-completion-card {
+      width: min(540px, 100%);
+
+      padding: 38px 34px;
+
+      text-align: center;
+
+      background: #ffffff;
+
+      border-radius: 24px;
+
+      box-shadow:
+        0 30px 90px rgba(0, 0, 0, 0.28);
+    }
+
+
+    .completion-icon {
+      width: 76px;
+      height: 76px;
+
+      margin: 0 auto 18px;
+
+      display: flex;
+
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 50%;
+
+      font-size: 42px;
+      font-weight: 700;
+
+      background:
+        rgba(91, 74, 190, 0.10);
+    }
+
+
+    .completion-number {
+      margin: 24px 0;
+
+      font-size: 42px;
+      font-weight: 800;
+    }
+
+
+    .completion-main-text,
+    .completion-thank-you {
+      line-height: 1.7;
+
+      color: #555;
+    }
+
+
+    .completion-close-btn {
+      margin-top: 20px;
+
+      padding: 12px 24px;
+
+      border: none;
+      border-radius: 10px;
+
+      cursor: pointer;
+
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+  </style>
 </head>
 
+
 <body>
- <header class="app-header">
-  <div class="header-overlay"></div>
 
-  <div class="header-content">
-    <div class="brand-row">
-      <img 
-  src="logo.png" 
-  alt="Project logo" 
-  class="app-logo"
-  style="position: absolute; top: 20px; left: 24px; width: 52px; height: 52px; max-width: 52px; max-height: 52px; object-fit: contain; border-radius: 12px; z-index: 5;"
-/>
 
-      <div>
-        <p class="eyebrow">AI • Dental Radiology • Third Molar Research</p>
-        <h1>Radiograph Gold Standard Platform</h1>
-        <p class="subtitle">
-          Expert Observer Assessment System for Impacted Mandibular Third Molars
-        </p>
+  <!-- =====================================================
+       HEADER
+       ===================================================== -->
+
+  <header class="app-header">
+
+    <div class="header-overlay"></div>
+
+
+    <div class="header-content">
+
+      <div class="brand-row">
+
+        <img
+          src="logo.png"
+          alt="Project logo"
+          class="app-logo"
+          style="
+            position:absolute;
+            top:20px;
+            left:24px;
+            width:52px;
+            height:52px;
+            max-width:52px;
+            max-height:52px;
+            object-fit:contain;
+            border-radius:12px;
+            z-index:5;
+          "
+        />
+
+
+        <div>
+
+          <p class="eyebrow">
+            AI • Dental Radiology • Third Molar Research
+          </p>
+
+
+          <h1>
+            Radiograph Gold Standard Platform
+          </h1>
+
+
+          <p class="subtitle">
+            Expert Observer Assessment System
+            for Impacted Mandibular Third Molars
+          </p>
+
+        </div>
+
       </div>
+
+
+      <div class="header-badges">
+
+        <span>
+          1000 Radiographs
+        </span>
+
+        <span>
+          3 Expert Evaluators
+        </span>
+
+        <span>
+          Gold Standard Dataset
+        </span>
+
+      </div>
+
     </div>
 
-    <div class="header-badges">
-      <span>1000 Radiographs</span>
-      <span>3 Expert Evaluators</span>
-      <span>Gold Standard Dataset</span>
-    </div>
-  </div>
-</header>
+  </header>
+
+
 
   <main class="container">
 
+
+    <!-- =====================================================
+         PROJECT INFORMATION
+         ===================================================== -->
+
     <section class="card">
-      <h2>Project Information</h2>
+
+      <h2>
+        Project Information
+      </h2>
+
+
       <p>
-        This web form is designed for expert observers to evaluate panoramic radiographs
-        of impacted mandibular third molars and record standardized assessment data
-        for gold standard establishment.
+        This web form is designed for expert observers
+        to evaluate panoramic radiographs of impacted
+        mandibular third molars and record standardized
+        assessment data for gold standard establishment.
       </p>
+
+
       <p class="small-note">
-        Note: Do not upload identifiable patient information or real clinical images to a public GitHub repository.
+
+        ภาพรังสีในระบบเป็นข้อมูลที่ผ่านการลบข้อมูล
+        ระบุตัวตนแล้ว
+
+        และผู้ประเมินไม่ควรดาวน์โหลด
+        ถ่ายภาพหน้าจอ
+
+        หรือส่งต่อข้อมูลวิจัยผ่านช่องทาง
+        ที่ไม่ได้รับอนุญาต
+
       </p>
+
     </section>
 
+
+
+    <!-- =====================================================
+         OBSERVER INFORMATION
+         ===================================================== -->
+
     <section class="card">
-      <h2>Observer Information</h2>
+
+      <h2>
+        Observer Information
+      </h2>
+
 
       <div class="form-grid">
-        <div>
-          <label for="evaluatorId">Evaluator ID</label>
-          <input type="text" id="evaluatorId" placeholder="Example: E01" />
-        </div>
+
 
         <div>
-          <label for="participantId">Participant ID</label>
-          <input type="text" id="participantId" placeholder="Example: P01" />
+
+          <label for="evaluatorId">
+            Evaluator ID
+          </label>
+
+          <input
+            type="text"
+            id="evaluatorId"
+            placeholder="Example: E01"
+            readonly
+          />
+
         </div>
 
-        <div>
-          <label for="experienceYears">Years of Experience</label>
-          <input type="number" id="experienceYears" placeholder="Example: 7" />
-        </div>
+
 
         <div>
-          <label for="specialty">Specialty</label>
+
+          <label for="participantId">
+            Participant ID
+          </label>
+
+          <input
+            type="text"
+            id="participantId"
+            placeholder="Example: P01"
+          />
+
+        </div>
+
+
+
+        <div>
+
+          <label for="experienceYears">
+            Years of Experience
+          </label>
+
+          <input
+            type="number"
+            id="experienceYears"
+            placeholder="Example: 7"
+          />
+
+        </div>
+
+
+
+        <div>
+
+          <label for="specialty">
+            Specialty
+          </label>
+
+
           <select id="specialty">
-            <option value="">Select specialty</option>
-            <option value="OMFS">Oral and Maxillofacial Surgery</option>
-            <option value="Radiology">Dental Radiology</option>
-            <option value="General Dentistry">General Dentistry</option>
-            <option value="Other">Other</option>
+
+            <option value="">
+              Select specialty
+            </option>
+
+            <option value="OMFS">
+              Oral and Maxillofacial Surgery
+            </option>
+
+            <option value="Radiology">
+              Dental Radiology
+            </option>
+
+            <option value="General Dentistry">
+              General Dentistry
+            </option>
+
+            <option value="Other">
+              Other
+            </option>
+
           </select>
+
         </div>
+
+
       </div>
+
     </section>
 
+
+
+    <!-- =====================================================
+         PARTICIPANT INSTRUCTIONS
+         ===================================================== -->
+
+    <section class="participant-instruction-card">
+
+
+      <h2>
+        คำแนะนำสำหรับผู้ประเมิน
+      </h2>
+
+
+      <p>
+        กรุณาอ่านคำแนะนำต่อไปนี้
+        ก่อนเริ่มทำการประเมินภาพรังสี
+      </p>
+
+
+      <ol class="participant-instruction-list">
+
+
+        <li>
+
+          กรุณาเข้าสู่ระบบด้วย
+
+          <strong>
+            Evaluator ID และรหัสผ่าน
+            ที่ได้รับจากผู้วิจัยเท่านั้น
+          </strong>
+
+          และไม่ควรใช้งานบัญชี
+          ของผู้ประเมินท่านอื่น
+
+        </li>
+
+
+        <li>
+
+          ระบบประกอบด้วยภาพรังสีพาโนรามา
+          จำนวน
+
+          <strong>
+            1,000 ภาพ
+          </strong>
+
+          โดยผู้ประเมินทุกท่านจะได้รับ
+          ภาพชุดเดียวกันและเรียงลำดับเหมือนกัน
+
+        </li>
+
+
+        <li>
+
+          เมื่อเข้าสู่ระบบ
+
+          ระบบจะเปิดภาพที่ยังประเมิน
+          ไม่เสร็จโดยอัตโนมัติ
+
+          หากเคยประเมินไว้ก่อนหน้า
+          สามารถทำต่อจากข้อมูลเดิมได้
+
+        </li>
+
+
+        <li>
+
+          ข้อมูลที่กรอกจะถูก
+
+          <strong>
+            บันทึกเป็น Draft อัตโนมัติ
+          </strong>
+
+          ระหว่างการทำงาน
+
+        </li>
+
+
+        <li>
+
+          เมื่อประเมินภาพเสร็จ
+
+          กรุณากด
+
+          <strong>
+            Save &amp; Next
+          </strong>
+
+          เพื่อยืนยันภาพนั้นเป็น Completed
+
+          และไปยังภาพถัดไป
+
+        </li>
+
+
+        <li>
+
+          หากข้อมูลในช่องบังคับยังไม่ครบ
+
+          ระบบจะไม่อนุญาตให้บันทึก
+          ภาพนั้นเป็น Completed
+
+        </li>
+
+
+        <li>
+
+          สามารถใช้
+
+          Previous Image,
+
+          Next Image
+
+          หรือ Jump
+
+          เพื่อเปลี่ยนภาพได้ตามต้องการ
+
+        </li>
+
+
+        <li>
+
+          Next Unsaved Image
+
+          จะนำไปยังภาพถัดไป
+          ที่ยังประเมินไม่เสร็จ
+
+        </li>
+
+
+        <li>
+
+          สามารถหยุดพักและกลับมา
+          ใช้งานภายหลังได้
+
+          ข้อมูลที่บันทึกไว้จะถูก
+          เรียกคืนจากระบบ
+
+        </li>
+
+
+        <li>
+
+          กรุณาประเมินภาพ
+
+          <strong>
+            ด้วยตนเองอย่างเป็นอิสระ
+          </strong>
+
+          และไม่ปรึกษาหรือเปิดเผย
+          ผลการประเมินให้ผู้ประเมินรายอื่นทราบ
+          ระหว่างการเก็บข้อมูล
+
+        </li>
+
+
+        <li>
+
+          เมื่อ Completed = 1000
+
+          และ Remaining = 0
+
+          หมายความว่าการประเมิน
+          ครบถ้วนแล้ว
+
+        </li>
+
+
+      </ol>
+
+
+      <div class="participant-important-note">
+
+        <strong>
+          ข้อควรระวัง:
+        </strong>
+
+        กรุณาอย่าเปิดเผย Evaluator ID
+        หรือรหัสผ่านแก่บุคคลอื่น
+
+        และไม่ควรใช้งานบัญชี
+        ของผู้ประเมินท่านอื่น
+
+      </div>
+
+
+    </section>
+
+
+
+    <!-- =====================================================
+         RADIOGRAPH VIEWER
+         ===================================================== -->
+
     <section class="card">
-  <h2>Radiograph Viewer</h2>
 
-      <section class="participant-instruction-card">
 
-  <h2>คำแนะนำสำหรับผู้ประเมิน</h2>
+      <h2>
+        Radiograph Viewer
+      </h2>
 
-  <p>
-    กรุณาอ่านคำแนะนำต่อไปนี้ก่อนเริ่มทำการประเมินภาพรังสี
-  </p>
 
-  <ol class="participant-instruction-list">
+      <div class="viewer-box">
 
-    <li>
-      กรุณาเข้าสู่ระบบด้วย
-      <strong>Evaluator ID และรหัสผ่านที่ได้รับจากผู้วิจัยเท่านั้น</strong>
-      และไม่ควรใช้งานบัญชีของผู้ประเมินท่านอื่น
-    </li>
 
-    <li>
-      ระบบประกอบด้วยภาพรังสีพาโนรามาจำนวน
-      <strong>1,000 ภาพ</strong>
-      โดยผู้ประเมินทุกท่านจะได้รับภาพชุดเดียวกันและเรียงลำดับเหมือนกัน
-    </li>
+        <p id="imageProgress">
+          Waiting for dataset...
+        </p>
 
-    <li>
-      เมื่อเข้าสู่ระบบ ระบบจะเปิดภาพที่ยังประเมินไม่เสร็จโดยอัตโนมัติ
-      หากเคยทำการประเมินไว้ก่อนหน้า สามารถทำต่อจากข้อมูลเดิมได้ทันที
-    </li>
 
-    <li>
-      ข้อมูลที่กรอกในแบบประเมินจะถูก
-      <strong>บันทึกเป็นร่าง (Draft) อัตโนมัติ</strong>
-      ระหว่างการทำงาน
-    </li>
 
-    <li>
-      เมื่อประเมินภาพเรียบร้อยแล้ว กรุณากด
-      <strong>Save &amp; Next</strong>
-      เพื่อยืนยันว่าภาพดังกล่าวประเมินเสร็จสมบูรณ์และไปยังภาพถัดไป
-    </li>
+        <!-- =================================================
+             ACTUAL PANORAMIC IMAGE
+             ================================================= -->
 
-    <li>
-      หากข้อมูลในช่องที่จำเป็นยังไม่ครบ ระบบจะไม่อนุญาตให้บันทึกภาพนั้นเป็น
-      <strong>Completed</strong>
-    </li>
+        <div class="radiograph-display-container">
 
-    <li>
-      สามารถใช้ปุ่ม
-      <strong>Previous Image</strong>,
-      <strong>Next Image</strong>
-      หรือ
-      <strong>Jump</strong>
-      เพื่อเปลี่ยนภาพได้ตามต้องการ
-    </li>
 
-    <li>
-      ปุ่ม
-      <strong>Next Unsaved Image</strong>
-      จะนำไปยังภาพถัดไปที่ยังประเมินไม่เสร็จ
-    </li>
+          <div
+            id="radiographLoading"
+            class="radiograph-loading"
+          >
+            กำลังโหลดภาพรังสี...
+          </div>
 
-    <li>
-      หากจำเป็นต้องหยุดพักหรือปิดเว็บไซต์ สามารถกลับมาเข้าสู่ระบบใหม่ภายหลังได้
-      โดยข้อมูลที่บันทึกไว้ก่อนหน้าจะยังคงอยู่ในระบบ
-    </li>
 
-    <li>
-      กรุณาประเมินภาพรังสี
-      <strong>ด้วยตนเองอย่างเป็นอิสระ</strong>
-      และไม่ปรึกษาหรือเปิดเผยผลการประเมินให้ผู้ประเมินรายอื่นทราบระหว่างการเก็บข้อมูล
-    </li>
+          <img
+            id="radiographImage"
+            class="radiograph-image"
+            alt="Panoramic radiograph"
+            draggable="false"
+          />
 
-    <li>
-      เมื่อระบบแสดงว่า
-      <strong>Completed 1000 / 1000</strong>
-      หมายความว่าการประเมินภาพรังสีครบถ้วนแล้ว
-    </li>
 
-  </ol>
-
-  <div class="participant-important-note">
-    <strong>ข้อควรระวัง:</strong>
-    กรุณาอย่าเปิดเผย Evaluator ID หรือรหัสผ่านแก่บุคคลอื่น
-    และไม่ควรใช้งานบัญชีของผู้ประเมินท่านอื่น
-  </div>
-
-</section>
-  <p class="small-note">
-    Select all de-identified radiograph images. Image ID will be automatically generated from the file name.
-    Example: IMG_0001.png → IMG_0001
-    <br />
-    <strong>Resume instruction:</strong>
-    If the evaluation cannot be completed in one day, use the same computer and same browser.
-    On the next day, upload the same radiograph files again. Previously saved records will be restored automatically by Image ID.
-  </p>
-
-  <div class="viewer-box">
-    <p id="imageProgress">No image loaded</p>
-
-    <div class="progress-dashboard">
-      <div>
-        <span class="progress-label">Saved</span>
-        <strong id="savedImageCount">0</strong>
-      </div>
-
-      <div>
-        <span class="progress-label">Remaining</span>
-        <strong id="remainingImageCount">0</strong>
-      </div>
-
-      <div>
-        <span class="progress-label">Current Image</span>
-        <strong id="currentSaveStatus">Not saved</strong>
-      </div>
-    </div>
-
-    <div class="jump-row">
-      <input
-        type="number"
-        id="jumpImageNumber"
-        min="1"
-        placeholder="Jump to image number, e.g. 250"
-      />
-      <button type="button" id="jumpImageBtn">Jump</button>
-    </div>
-
-    <img id="radiographImage" alt="Radiograph preview" />
-
-    <div class="button-row">
-      <button type="button" id="prevImageBtn">Previous Image</button>
-      <button type="button" id="nextImageBtn">Next Image</button>
-    </div>
-
-    <div class="workflow-panel">
-      <h3>Workflow Controls</h3>
-
-      <div class="button-row action-grid">
-        <button type="button" id="saveAssessmentBtn">Save Assessment</button>
-        <button type="button" id="saveNextBtn">Save & Next</button>
-        <button type="button" id="nextUnsavedBtn">Next Unsaved Image</button>
-        <button type="button" id="exportCsvBtn">Export CSV</button>
-      </div>
-
-      <details class="data-tools">
-        <summary>Data management tools</summary>
-
-        <div class="button-row action-grid">
-          <button type="button" id="exportBackupBtn">Export Backup JSON</button>
-          <button type="button" id="importBackupBtn">Import Backup JSON</button>
-          <button type="button" id="clearDataBtn" class="danger-button">Clear Saved Data</button>
         </div>
 
-        <input type="file" id="backupFileInput" accept=".json" style="display: none;" />
 
-        <p id="savedCount" class="small-note">
-          Saved records: 0
-        </p>
 
-        <p class="small-note">
-          Clear Saved Data will delete locally saved assessment records from this browser only.
-        </p>
-      </details>
-    </div>
-  </div>
-</section>
-    
+        <!-- Image error will be shown here -->
+
+        <div
+          id="radiographError"
+          class="radiograph-error"
+          hidden
+        ></div>
+
+
+
+        <div class="retry-image-row">
+
+          <button
+            type="button"
+            id="retryImageBtn"
+          >
+            Retry Image
+          </button>
+
+        </div>
+
+
+
+        <!-- =================================================
+             PROGRESS
+             ================================================= -->
+
+        <div class="progress-dashboard">
+
+
+          <div>
+
+            <span class="progress-label">
+              Completed
+            </span>
+
+            <strong id="savedImageCount">
+              0
+            </strong>
+
+          </div>
+
+
+
+          <div>
+
+            <span class="progress-label">
+              Remaining
+            </span>
+
+            <strong id="remainingImageCount">
+              1000
+            </strong>
+
+          </div>
+
+
+
+          <div>
+
+            <span class="progress-label">
+              Current Image
+            </span>
+
+            <strong id="currentSaveStatus">
+              Not saved
+            </strong>
+
+          </div>
+
+
+        </div>
+
+
+
+        <!-- =================================================
+             JUMP
+             ================================================= -->
+
+        <div class="jump-row">
+
+
+          <input
+            type="number"
+            id="jumpImageNumber"
+            min="1"
+            max="1000"
+            placeholder="Jump to image number, e.g. 250"
+          />
+
+
+          <button
+            type="button"
+            id="jumpImageBtn"
+          >
+            Jump
+          </button>
+
+
+        </div>
+
+
+
+        <!-- =================================================
+             PREVIOUS / NEXT
+             ================================================= -->
+
+        <div class="button-row">
+
+
+          <button
+            type="button"
+            id="prevImageBtn"
+          >
+            Previous Image
+          </button>
+
+
+          <button
+            type="button"
+            id="nextImageBtn"
+          >
+            Next Image
+          </button>
+
+
+        </div>
+
+
+
+        <!-- =================================================
+             WORKFLOW
+             ================================================= -->
+
+        <div class="workflow-panel">
+
+
+          <h3>
+            Workflow Controls
+          </h3>
+
+
+          <div class="button-row action-grid">
+
+
+            <button
+              type="button"
+              id="saveAssessmentBtn"
+            >
+              Save Assessment
+            </button>
+
+
+            <button
+              type="button"
+              id="saveNextBtn"
+            >
+              Save &amp; Next
+            </button>
+
+
+            <button
+              type="button"
+              id="nextUnsavedBtn"
+            >
+              Next Unsaved Image
+            </button>
+
+
+            <button
+              type="button"
+              id="exportCsvBtn"
+            >
+              Export CSV
+            </button>
+
+
+          </div>
+
+
+        </div>
+
+
+      </div>
+
+    </section>
+
+
+
+    <!-- =====================================================
+         ASSESSMENT FORM
+         ===================================================== -->
+
     <section class="card">
-      <h2>Assessment Form</h2>
+
+
+      <h2>
+        Assessment Form
+      </h2>
+
 
       <div class="form-grid">
-        <div>
-          <label for="imageId">Image ID</label>
-          <input type="text" id="imageId" placeholder="Auto-generated from file name" readonly />
-        </div>
+
 
         <div>
-          <label for="targetTooth">Target Tooth</label>
+
+          <label for="imageId">
+            Image ID
+          </label>
+
+          <input
+            type="text"
+            id="imageId"
+            placeholder="Loaded automatically"
+            readonly
+          />
+
+        </div>
+
+
+
+        <div>
+
+          <label for="targetTooth">
+            Target Tooth
+          </label>
+
+
           <select id="targetTooth">
-            <option value="">Select tooth</option>
-            <option value="38">38</option>
-            <option value="48">48</option>
+
+            <option value="">
+              Select tooth
+            </option>
+
+            <option value="38">
+              38
+            </option>
+
+            <option value="48">
+              48
+            </option>
+
           </select>
+
         </div>
 
+
+
         <div>
-          <label for="imageQuality">Image Quality</label>
+
+          <label for="imageQuality">
+            Image Quality
+          </label>
+
+
           <select id="imageQuality">
-            <option value="">Select quality</option>
-            <option value="Adequate">Adequate</option>
-            <option value="Limited but assessable">Limited but assessable</option>
-            <option value="Poor">Poor</option>
-            <option value="Cannot determine">Cannot determine</option>
+
+            <option value="">
+              Select quality
+            </option>
+
+            <option value="Adequate">
+              Adequate
+            </option>
+
+            <option value="Limited but assessable">
+              Limited but assessable
+            </option>
+
+            <option value="Poor">
+              Poor
+            </option>
+
+            <option value="Cannot determine">
+              Cannot determine
+            </option>
+
           </select>
+
         </div>
 
+
+
         <div>
-          <label for="angulation">Angulation</label>
+
+          <label for="angulation">
+            Angulation
+          </label>
+
+
           <select id="angulation">
-            <option value="">Select angulation</option>
-            <option value="Mesioangular">Mesioangular</option>
-            <option value="Horizontal">Horizontal</option>
-            <option value="Vertical">Vertical</option>
-            <option value="Distoangular">Distoangular</option>
-            <option value="Other">Other</option>
-            <option value="Cannot determine">Cannot determine</option>
+
+            <option value="">
+              Select angulation
+            </option>
+
+            <option value="Mesioangular">
+              Mesioangular
+            </option>
+
+            <option value="Horizontal">
+              Horizontal
+            </option>
+
+            <option value="Vertical">
+              Vertical
+            </option>
+
+            <option value="Distoangular">
+              Distoangular
+            </option>
+
+            <option value="Other">
+              Other
+            </option>
+
+            <option value="Cannot determine">
+              Cannot determine
+            </option>
+
           </select>
+
         </div>
 
+
+
         <div>
-          <label for="pellRamus">Pell & Gregory Ramus</label>
+
+          <label for="pellRamus">
+            Pell &amp; Gregory Ramus
+          </label>
+
+
           <select id="pellRamus">
-            <option value="">Select class</option>
-            <option value="Class I">Class I</option>
-            <option value="Class II">Class II</option>
-            <option value="Class III">Class III</option>
-            <option value="Cannot determine">Cannot determine</option>
+
+            <option value="">
+              Select class
+            </option>
+
+            <option value="Class I">
+              Class I
+            </option>
+
+            <option value="Class II">
+              Class II
+            </option>
+
+            <option value="Class III">
+              Class III
+            </option>
+
+            <option value="Cannot determine">
+              Cannot determine
+            </option>
+
           </select>
+
         </div>
 
+
+
         <div>
-          <label for="pellDepth">Pell & Gregory Depth</label>
+
+          <label for="pellDepth">
+            Pell &amp; Gregory Depth
+          </label>
+
+
           <select id="pellDepth">
-            <option value="">Select position</option>
-            <option value="Position A">Position A</option>
-            <option value="Position B">Position B</option>
-            <option value="Position C">Position C</option>
-            <option value="Cannot determine">Cannot determine</option>
+
+            <option value="">
+              Select position
+            </option>
+
+            <option value="Position A">
+              Position A
+            </option>
+
+            <option value="Position B">
+              Position B
+            </option>
+
+            <option value="Position C">
+              Position C
+            </option>
+
+            <option value="Cannot determine">
+              Cannot determine
+            </option>
+
           </select>
+
         </div>
 
+
+
         <div>
-          <label for="ianRisk">Overall IAN Risk</label>
+
+          <label for="ianRisk">
+            Overall IAN Risk
+          </label>
+
+
           <select id="ianRisk">
-            <option value="">Select risk</option>
-            <option value="Low">Low</option>
-            <option value="Moderate">Moderate</option>
-            <option value="High">High</option>
-            <option value="Cannot determine">Cannot determine</option>
+
+            <option value="">
+              Select risk
+            </option>
+
+            <option value="Low">
+              Low
+            </option>
+
+            <option value="Moderate">
+              Moderate
+            </option>
+
+            <option value="High">
+              High
+            </option>
+
+            <option value="Cannot determine">
+              Cannot determine
+            </option>
+
           </select>
+
         </div>
 
+
+
         <div>
-          <label for="confidenceScore">Confidence Score</label>
+
+          <label for="confidenceScore">
+            Confidence Score
+          </label>
+
+
           <select id="confidenceScore">
-            <option value="">Select score</option>
-            <option value="1">1 - Very low confidence</option>
-            <option value="2">2 - Low confidence</option>
-            <option value="3">3 - Moderate confidence</option>
-            <option value="4">4 - High confidence</option>
-            <option value="5">5 - Very high confidence</option>
+
+            <option value="">
+              Select score
+            </option>
+
+            <option value="1">
+              1 - Very low confidence
+            </option>
+
+            <option value="2">
+              2 - Low confidence
+            </option>
+
+            <option value="3">
+              3 - Moderate confidence
+            </option>
+
+            <option value="4">
+              4 - High confidence
+            </option>
+
+            <option value="5">
+              5 - Very high confidence
+            </option>
+
           </select>
+
         </div>
+
+
 
         <div class="full-width">
-          <label for="comment">Comment / Remark</label>
-          <textarea id="comment" rows="4" placeholder="Optional notes about image quality, canal visibility, root morphology, or uncertainty"></textarea>
+
+          <label for="comment">
+            Comment / Remark
+          </label>
+
+
+          <textarea
+            id="comment"
+            rows="4"
+            placeholder="Optional notes about image quality, canal visibility, root morphology, or uncertainty"
+          ></textarea>
+
         </div>
+
+
+      </div>
+
     </section>
 
-    </main>
 
-  <p id="jsStatus" class="small-note">
+  </main>
+
+
+
+  <!-- =====================================================
+       DEBUG STATUS
+       ===================================================== -->
+
+  <p
+    id="jsStatus"
+    class="small-note"
+    style="display:none;"
+  >
     JavaScript status: not loaded
   </p>
 
 
-  <!-- ========================================= -->
-  <!-- STUDY COMPLETION SCREEN -->
-  <!-- ========================================= -->
+
+  <!-- =====================================================
+       STUDY COMPLETION
+       ===================================================== -->
 
   <div
     id="studyCompletionOverlay"
     class="study-completion-overlay"
   >
 
+
     <div class="study-completion-card">
+
 
       <div class="completion-icon">
         ✓
       </div>
 
-      <h1>การประเมินเสร็จสมบูรณ์</h1>
+
+      <h1>
+        การประเมินเสร็จสมบูรณ์
+      </h1>
+
 
       <p class="completion-main-text">
-        ท่านได้ทำการประเมินภาพรังสีพาโนรามาครบทั้งหมดแล้ว
+
+        ท่านได้ทำการประเมิน
+        ภาพรังสีพาโนรามาครบทั้งหมดแล้ว
+
       </p>
+
 
       <div class="completion-number">
         1000 / 1000
       </div>
 
+
       <p>
-        ข้อมูลการประเมินของท่านได้รับการบันทึกในระบบเรียบร้อยแล้ว
+
+        ข้อมูลการประเมินของท่าน
+        ได้รับการบันทึกในระบบเรียบร้อยแล้ว
+
       </p>
 
+
       <p class="completion-thank-you">
-        ขอขอบพระคุณสำหรับความร่วมมือในการเข้าร่วมโครงการวิจัย
+
+        ขอขอบพระคุณสำหรับความร่วมมือ
+        ในการเข้าร่วมโครงการวิจัย
+
       </p>
+
 
       <button
         type="button"
@@ -391,19 +1291,36 @@
         กลับไปตรวจสอบข้อมูล
       </button>
 
+
     </div>
 
   </div>
 
 
-  <!-- ========================================= -->
-  <!-- JAVASCRIPT -->
-  <!-- ========================================= -->
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./supabase-config.js"></script>
-  <script src="./participant-auth-config.js"></script>
-  <script src="./app.js?v=cloud-final-002"></script>
+  <!-- =====================================================
+       JAVASCRIPT
+       ===================================================== -->
+
+  <script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+  ></script>
+
+
+  <script
+    src="./supabase-config.js"
+  ></script>
+
+
+  <script
+    src="./participant-auth-config.js"
+  ></script>
+
+
+  <script
+    src="./app.js?v=cloud-final-004"
+  ></script>
+
 
 </body>
 </html>
