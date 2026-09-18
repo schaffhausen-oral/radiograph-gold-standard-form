@@ -16,6 +16,9 @@ let autosaveTimer = null;
 
 let appReady = false;
 
+let currentRadiographObjectUrl = null;
+
+let imageLoadToken = 0;
 
 
 const ASSESSMENT_FIELD_IDS = [
@@ -850,6 +853,11 @@ async function signOutObserver() {
   await flushAutosave();
 
 
+  imageLoadToken++;
+
+  releaseCurrentRadiographUrl();
+
+
   await supabaseClient
     .auth
     .signOut();
@@ -1236,377 +1244,248 @@ function chooseResumeImage() {
 
 
 async function showCurrentImage() {
+  if (!appReady || !radiographs.length) return;
 
-  if (
-    !appReady ||
-    !radiographs.length
-  ) {
+  const loadToken = ++imageLoadToken;
+  const record = radiographs[currentImageIndex];
 
-    return;
-
-  }
-
-
-  const record =
-    radiographs[
-      currentImageIndex
-    ];
-
-
-  const progress =
-    document.getElementById(
-      "imageProgress"
-    );
-
-
-  const image =
-    document.getElementById(
-      "radiographImage"
-    );
-
-
-  const loading =
-    document.getElementById(
-      "radiographLoading"
-    );
-
-
-  const errorBox =
-    document.getElementById(
-      "radiographError"
-    );
-
+  const progress = document.getElementById("imageProgress");
+  const image = document.getElementById("radiographImage");
+  const loading = document.getElementById("radiographLoading");
+  const errorBox = document.getElementById("radiographError");
 
   if (!image) {
-
-    showViewerError(
-
-      "System error: radiographImage element is missing from index.html."
-
-    );
-
-
+    showViewerError("System error: ไม่พบ radiographImage ใน index.html");
     return;
-
   }
-
 
   if (progress) {
-
     progress.textContent =
-
       "Image " +
-
-      (
-        currentImageIndex + 1
-      ) +
-
+      (currentImageIndex + 1) +
       " of " +
-
       radiographs.length +
-
       " | " +
-
       record.image_id;
-
   }
 
-
-  setValue(
-
-    "imageId",
-
-    record.image_id
-
-  );
-
-
+  setValue("imageId", record.image_id);
   clearAssessmentFields();
-
-
-  loadAssessmentIntoForm(
-    record.id
-  );
-
-
+  loadAssessmentIntoForm(record.id);
   updateProgressDashboard();
 
-
-  image.classList.remove(
-    "has-image"
-  );
-
-
-  image.removeAttribute(
-    "src"
-  );
-
+  releaseCurrentRadiographUrl();
+  image.onload = null;
+  image.onerror = null;
+  image.removeAttribute("src");
+  image.classList.remove("has-image");
+  image.style.display = "block";
 
   if (loading) {
-
-    loading.hidden =
-      false;
-
-
-    loading.textContent =
-      "กำลังโหลดภาพรังสี...";
-
+    loading.hidden = false;
+    loading.style.display = "block";
+    loading.textContent = "กำลังโหลดภาพรังสี...";
   }
-
 
   if (errorBox) {
-
-    errorBox.hidden =
-      true;
-
-
-    errorBox.textContent =
-      "";
-
+    errorBox.hidden = true;
+    errorBox.textContent = "";
   }
 
+  setCloudSaveIndicator("Loading image...");
 
-  setCloudSaveIndicator(
-    "Loading image..."
-  );
+  console.log("Loading radiograph", {
+    image_id: record.image_id,
+    file_name: record.file_name,
+    storage_path: record.storage_path
+  });
 
+  let downloadedBlob;
 
-  /*
-    Create a fresh signed URL every time.
-
-    ไม่ใช้ cached signed URL
-    เพื่อป้องกัน URL หมดอายุ
-  */
-
-  const {
-    data,
-    error
-  } =
-    await supabaseClient
+  try {
+    const result = await supabaseClient
       .storage
-      .from(
-        "radiographs"
-      )
-      .createSignedUrl(
+      .from("radiographs")
+      .download(record.storage_path);
 
-        record.storage_path,
+    if (loadToken !== imageLoadToken) return;
 
-        3600
+    if (result.error) {
+      throw result.error;
+    }
 
-      );
+    downloadedBlob = result.data;
+  } catch (error) {
+    if (loadToken !== imageLoadToken) return;
 
+    console.error("Supabase Storage download failed:", error);
 
-  if (error) {
-
-    const message =
-
-      "ไม่สามารถโหลด " +
-
+    showViewerError(
+      "ไม่สามารถดาวน์โหลด " +
       record.image_id +
-
-      " จาก Storage ได้\n" +
-
-      error.message +
-
-      "\nPath: " +
-
-      record.storage_path;
-
-
-    console.error(
-
-      message,
-
-      error
-
+      " จาก Supabase Storage ได้\n\n" +
+      "Error: " +
+      (error && error.message ? error.message : String(error)) +
+      "\n\nStorage path: " +
+      record.storage_path
     );
 
-
-    showViewerError(
-      message
-    );
-
-
-    setCloudSaveIndicator(
-      "Image load failed"
-    );
-
-
+    setCloudSaveIndicator("Image download failed");
     return;
-
   }
 
-
-  if (
-    !data ||
-    !data.signedUrl
-  ) {
-
-    const message =
-
-      "ไม่พบ signed URL สำหรับ " +
-
-      record.image_id;
-
-
-    console.error(
-
-      message,
-
-      data
-
-    );
-
-
+  if (!downloadedBlob) {
     showViewerError(
-      message
+      "ไม่พบข้อมูลไฟล์สำหรับ " +
+      record.image_id +
+      "\n\nStorage path: " +
+      record.storage_path
     );
 
-
-    setCloudSaveIndicator(
-      "Image URL missing"
-    );
-
-
+    setCloudSaveIndicator("Image missing");
     return;
-
   }
 
+  let arrayBuffer;
 
-  image.onload =
-    function () {
+  try {
+    arrayBuffer = await downloadedBlob.arrayBuffer();
+  } catch (error) {
+    if (loadToken !== imageLoadToken) return;
 
+    console.error("Cannot read downloaded radiograph:", error);
+    showViewerError(
+      "ดาวน์โหลด " +
+      record.image_id +
+      " ได้ แต่ browser ไม่สามารถอ่านข้อมูลไฟล์ได้"
+    );
+    setCloudSaveIndicator("Image read failed");
+    return;
+  }
 
-      image.classList.add(
-        "has-image"
-      );
+  if (loadToken !== imageLoadToken) return;
 
+  if (!arrayBuffer || arrayBuffer.byteLength === 0) {
+    showViewerError("ไฟล์ " + record.image_id + " มีขนาด 0 bytes");
+    setCloudSaveIndicator("Empty image file");
+    return;
+  }
 
-      if (loading) {
+  const detectedMime = detectRadiographMime(arrayBuffer);
+  const serverMime = String(downloadedBlob.type || "").toLowerCase();
 
-        loading.hidden =
-          true;
+  let finalMime = detectedMime;
 
-      }
+  if (!finalMime && serverMime.startsWith("image/")) {
+    finalMime = serverMime;
+  }
 
-
-      if (errorBox) {
-
-        errorBox.hidden =
-          true;
-
-      }
-
-
-      setCloudSaveIndicator(
-
-        getCurrentAssessmentIndicator()
-
-      );
-
-    };
-
-
-  image.onerror =
-    function () {
-
-
-      const message =
-
-        "Browser ไม่สามารถแสดงภาพ " +
-
-        record.image_id +
-
-        " ได้ " +
-
-        "กรุณากด Retry Image " +
-
-        "หรือแจ้งทีมวิจัย";
-
-
-      console.error(
-
-        message,
-
-        data.signedUrl
-
-      );
-
-
-      image.classList.remove(
-        "has-image"
-      );
-
-
+  if (!finalMime) {
+    if (isDicomFile(arrayBuffer)) {
       showViewerError(
-        message
+        "ไฟล์ " +
+        record.image_id +
+        " เป็น DICOM ซึ่งไม่สามารถแสดงด้วย <img> ได้โดยตรง\n\n" +
+        "ต้องแปลงเป็น PNG/JPEG หรือใช้ DICOM viewer ก่อนใช้งานในระบบนี้"
       );
+      setCloudSaveIndicator("DICOM file detected");
+      return;
+    }
 
+    showViewerError(
+      "ดาวน์โหลด " +
+      record.image_id +
+      " สำเร็จ แต่ไม่พบรูปแบบภาพที่ browser รองรับ\n\n" +
+      "Filename: " +
+      record.file_name +
+      "\nStorage path: " +
+      record.storage_path +
+      "\nSupabase MIME: " +
+      (serverMime || "unknown") +
+      "\nFile size: " +
+      arrayBuffer.byteLength +
+      " bytes"
+    );
 
-      setCloudSaveIndicator(
-        "Image display failed"
-      );
+    setCloudSaveIndicator("Unsupported image format");
+    return;
+  }
 
-    };
+  const correctedBlob = new Blob([arrayBuffer], { type: finalMime });
+  currentRadiographObjectUrl = URL.createObjectURL(correctedBlob);
 
+  image.onload = function () {
+    if (loadToken !== imageLoadToken) return;
 
-  image.src =
-    data.signedUrl;
+    image.classList.add("has-image");
 
+    if (loading) {
+      loading.hidden = true;
+      loading.style.display = "none";
+    }
 
-  image.alt =
+    if (errorBox) {
+      errorBox.hidden = true;
+      errorBox.textContent = "";
+    }
 
-    "Panoramic radiograph " +
+    setCloudSaveIndicator(getCurrentAssessmentIndicator());
 
-    record.image_id;
+    console.log(
+      "Radiograph displayed successfully:",
+      record.image_id,
+      finalMime,
+      arrayBuffer.byteLength + " bytes"
+    );
+  };
 
+  image.onerror = function () {
+    if (loadToken !== imageLoadToken) return;
+
+    image.classList.remove("has-image");
+
+    if (loading) {
+      loading.hidden = true;
+      loading.style.display = "none";
+    }
+
+    showViewerError(
+      "ดาวน์โหลด " +
+      record.image_id +
+      " สำเร็จ แต่ browser ไม่สามารถ decode ภาพได้\n\n" +
+      "Detected type: " +
+      finalMime +
+      "\nFilename: " +
+      record.file_name +
+      "\nFile size: " +
+      arrayBuffer.byteLength +
+      " bytes"
+    );
+
+    setCloudSaveIndicator("Image decode failed");
+  };
+
+  image.src = currentRadiographObjectUrl;
+  image.alt = "Panoramic radiograph " + record.image_id;
 }
 
 
 
-function showViewerError(
-  message
-) {
-
-  const loading =
-    document.getElementById(
-      "radiographLoading"
-    );
-
-
-  const errorBox =
-    document.getElementById(
-      "radiographError"
-    );
-
+function showViewerError(message) {
+  const loading = document.getElementById("radiographLoading");
+  const errorBox = document.getElementById("radiographError");
 
   if (loading) {
-
-    loading.hidden =
-      true;
-
+    loading.hidden = true;
+    loading.style.display = "none";
   }
-
 
   if (errorBox) {
-
-    errorBox.hidden =
-      false;
-
-
-    errorBox.textContent =
-      message;
-
+    errorBox.hidden = false;
+    errorBox.textContent = message;
+  } else {
+    alert(message);
   }
-
-  else {
-
-    alert(
-      message
-    );
-
-  }
-
 }
 
 
@@ -2029,95 +1908,45 @@ function buildAssessmentPayload(
 
 
 async function saveDraftAssessment() {
-
-  if (
-
-    !appReady ||
-
-    !currentUserId ||
-
-    !radiographs[
-      currentImageIndex
-    ]
-
-  ) {
-
+  if (!appReady || !currentUserId || !radiographs[currentImageIndex]) {
     return false;
-
   }
 
+  const currentRadiograph = radiographs[currentImageIndex];
+  const existingAssessment = assessmentMap.get(currentRadiograph.id);
 
-  const payload =
-    buildAssessmentPayload(
-      "draft"
-    );
+  /*
+    If an already-completed assessment is edited later,
+    keep it completed instead of accidentally reverting it to draft.
+  */
+  const autosaveStatus =
+    existingAssessment && existingAssessment.status === "completed"
+      ? "completed"
+      : "draft";
 
+  const payload = buildAssessmentPayload(autosaveStatus);
 
-  const {
-    data,
-    error
-  } =
-    await supabaseClient
-      .from(
-        "assessments"
-      )
-      .upsert(
-
-        payload,
-
-        {
-          onConflict:
-            "evaluator_user_id,radiograph_id"
-        }
-
-      )
-      .select()
-      .single();
-
+  const { data, error } = await supabaseClient
+    .from("assessments")
+    .upsert(payload, {
+      onConflict: "evaluator_user_id,radiograph_id"
+    })
+    .select()
+    .single();
 
   if (error) {
-
-    console.error(
-
-      "Draft autosave failed:",
-
-      error
-
-    );
-
-
-    setCloudSaveIndicator(
-      "Save failed"
-    );
-
-
+    console.error("Draft autosave failed:", error);
+    setCloudSaveIndicator("Save failed");
     return false;
-
   }
 
-
-  assessmentMap.set(
-
-    data.radiograph_id,
-
-    data
-
-  );
-
-
+  assessmentMap.set(data.radiograph_id, data);
   setCloudSaveIndicator(
-    "Draft saved"
+    data.status === "completed" ? "Completed ✓" : "Draft saved"
   );
-
-
   updateSavedCount();
-
-
   updateProgressDashboard();
-
-
   return true;
-
 }
 
 
@@ -3588,4 +3417,95 @@ function setJavaScriptStatus(
 
   }
 
+}
+
+
+
+/* =========================================================
+   RADIOGRAPH FILE HELPERS
+   ========================================================= */
+
+function releaseCurrentRadiographUrl() {
+  if (currentRadiographObjectUrl) {
+    URL.revokeObjectURL(currentRadiographObjectUrl);
+    currentRadiographObjectUrl = null;
+  }
+}
+
+function detectRadiographMime(arrayBuffer) {
+  const bytes = new Uint8Array(arrayBuffer);
+
+  /* JPEG */
+  if (
+    bytes.length >= 3 &&
+    bytes[0] === 0xff &&
+    bytes[1] === 0xd8 &&
+    bytes[2] === 0xff
+  ) {
+    return "image/jpeg";
+  }
+
+  /* PNG */
+  if (
+    bytes.length >= 8 &&
+    bytes[0] === 0x89 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x4e &&
+    bytes[3] === 0x47 &&
+    bytes[4] === 0x0d &&
+    bytes[5] === 0x0a &&
+    bytes[6] === 0x1a &&
+    bytes[7] === 0x0a
+  ) {
+    return "image/png";
+  }
+
+  /* GIF */
+  if (
+    bytes.length >= 6 &&
+    bytes[0] === 0x47 &&
+    bytes[1] === 0x49 &&
+    bytes[2] === 0x46 &&
+    bytes[3] === 0x38
+  ) {
+    return "image/gif";
+  }
+
+  /* WebP */
+  if (
+    bytes.length >= 12 &&
+    bytes[0] === 0x52 &&
+    bytes[1] === 0x49 &&
+    bytes[2] === 0x46 &&
+    bytes[3] === 0x46 &&
+    bytes[8] === 0x57 &&
+    bytes[9] === 0x45 &&
+    bytes[10] === 0x42 &&
+    bytes[11] === 0x50
+  ) {
+    return "image/webp";
+  }
+
+  /* BMP */
+  if (
+    bytes.length >= 2 &&
+    bytes[0] === 0x42 &&
+    bytes[1] === 0x4d
+  ) {
+    return "image/bmp";
+  }
+
+  return null;
+}
+
+function isDicomFile(arrayBuffer) {
+  const bytes = new Uint8Array(arrayBuffer);
+
+  return (
+    bytes.length >= 132 &&
+    bytes[128] === 0x44 &&
+    bytes[129] === 0x49 &&
+    bytes[130] === 0x43 &&
+    bytes[131] === 0x4d
+  );
 }
