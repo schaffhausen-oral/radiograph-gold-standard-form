@@ -1,687 +1,445 @@
-:root {
-  --bg-main: #f5f3ff;
-  --bg-card: #ffffff;
-  --primary: #4f46e5;
-  --primary-dark: #312e81;
-  --secondary: #2563eb;
-  --text-main: #1e1b4b;
-  --text-muted: #64748b;
-  --border: #dbeafe;
-}
-
 * {
   box-sizing: border-box;
 }
 
+:root {
+  --bg: #f4f6ff;
+  --card: #ffffff;
+  --border: #d9d7ff;
+  --text: #1d2050;
+  --muted: #62667d;
+  --primary: #3f51e8;
+  --primary-dark: #2f3fc3;
+  --accent: #6f4bf5;
+  --success: #157a62;
+  --warning: #9a6600;
+  --danger: #b42318;
+}
+
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: linear-gradient(135deg, var(--bg-main), #eff6ff);
-  color: var(--text-main);
+  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
 }
 
 .app-header {
-  background: linear-gradient(135deg, var(--primary-dark), var(--secondary));
-  color: white;
-  padding: 28px;
-  text-align: center;
+  background: linear-gradient(135deg, #302d94, #365ff0);
+  color: #fff;
+  padding: 24px;
 }
 
-.app-header h1 {
-  margin: 0 0 8px;
-  font-size: 28px;
+.header-content {
+  max-width: 1500px;
+  margin: 0 auto;
 }
 
-.app-header p {
+.brand-row {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+
+.app-logo {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: rgba(255,255,255,.12);
+}
+
+.eyebrow {
+  margin: 0 0 5px;
+  font-size: 12px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  opacity: .86;
+}
+
+h1 {
   margin: 0;
-  font-size: 15px;
-  opacity: 0.9;
+}
+
+.subtitle {
+  margin: 8px 0 0;
+  opacity: .9;
+}
+
+.header-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.header-badges span {
+  padding: 7px 10px;
+  border: 1px solid rgba(255,255,255,.26);
+  border-radius: 999px;
+  background: rgba(255,255,255,.10);
+  font-size: 13px;
 }
 
 .container {
-  max-width: 1100px;
-  margin: 24px auto;
-  padding: 0 16px;
+  max-width: 1500px;
+  margin: 22px auto 48px;
+  padding: 0 18px;
 }
 
-.card {
-  background: var(--bg-card);
+.card,
+.participant-instruction-card {
+  background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 20px;
+  border-radius: 18px;
+  box-shadow: 0 8px 28px rgba(35, 28, 90, 0.07);
+  padding: 24px;
   margin-bottom: 20px;
-  box-shadow: 0 8px 20px rgba(49, 46, 129, 0.08);
 }
 
-.card h2 {
-  margin-top: 0;
-  color: var(--primary-dark);
+.participant-instruction-card ol {
+  line-height: 1.7;
+  padding-left: 22px;
 }
 
-label {
-  display: block;
-  font-weight: bold;
-  margin-bottom: 6px;
+.form-grid,
+.two-col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+label,
+legend {
+  font-weight: 700;
 }
 
 input,
 select,
 textarea,
 button {
+  font: inherit;
+}
+
+input,
+select,
+textarea {
   width: 100%;
   padding: 10px 12px;
+  border: 1px solid #c8cbd8;
   border-radius: 10px;
-  border: 1px solid #cbd5e1;
-  font-size: 14px;
+  background: #fff;
+  color: var(--text);
+}
+
+textarea {
+  resize: vertical;
 }
 
 button {
+  border: 0;
+  border-radius: 10px;
+  padding: 11px 15px;
   background: var(--primary);
-  color: white;
-  border: none;
-  font-weight: bold;
+  color: #fff;
+  font-weight: 700;
   cursor: pointer;
+
+  animation: none !important;
+  transform: none !important;
+  transition: background-color .12s ease !important;
+  box-shadow: none !important;
 }
 
 button:hover {
   background: var(--primary-dark);
+  transform: none !important;
+  box-shadow: none !important;
 }
 
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}
-
-.full-width {
-  grid-column: 1 / -1;
-}
-
-.small-note {
-  color: var(--text-muted);
-  font-size: 13px;
-
- .viewer-box {
-  margin-top: 16px;
-  border: 1px dashed #c4b5fd;
-  border-radius: 16px;
-  padding: 16px;
-  background: #faf5ff;
-  max-width: 100%;
-  overflow: hidden;
-}
-
-#imageProgress {
-  font-weight: bold;
-  color: #312e81;
-  margin-bottom: 12px;
-}
-
-#radiographImage {
-  display: none;
-  width: 100%;
-  max-width: 100%;
-  height: auto;
-  max-height: 520px;
-  object-fit: contain;
-  border-radius: 12px;
-  background: #020617;
-  border: 1px solid #cbd5e1;
-  margin: 12px auto;
-}
-
-.button-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 12px;
-}
-
-@media (max-width: 768px) {
-  #radiographImage {
-    max-height: 360px;
-  }
-
-  .button-row {
-    grid-template-columns: 1fr;
-  }
-}
-
-
-.app-header {
-  position: relative;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at top left, rgba(168, 85, 247, 0.55), transparent 35%),
-    radial-gradient(circle at bottom right, rgba(37, 99, 235, 0.65), transparent 35%),
-    linear-gradient(135deg, #1e1b4b 0%, #312e81 45%, #1d4ed8 100%);
-  color: white;
-  padding: 42px 28px;
-  text-align: left;
-}
-
-.header-overlay {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px);
-  background-size: 28px 28px;
-  opacity: 0.45;
-}
-
-.header-content {
-  position: relative;
-  max-width: 1100px;
-  margin: 0 auto;
-  z-index: 1;
-}
-
-.brand-row {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.app-logo {
-  width: 46px;
-  height: 46px;
-  object-fit: contain;
-  border-radius: 12px;
-  padding: 6px;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.22);
-  backdrop-filter: blur(12px);
-}
-}
-
-.eyebrow {
-  margin: 0 0 8px;
-  font-size: 13px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #c4b5fd;
-  font-weight: 700;
-}
-
-.app-header h1 {
-  margin: 0;
-  font-size: 38px;
-  line-height: 1.1;
-  letter-spacing: -0.04em;
-}
-
-.subtitle {
-  margin: 12px 0 0;
-  max-width: 720px;
-  font-size: 16px;
-  color: #dbeafe;
-}
-
-.header-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 24px;
-}
-
-.header-badges span {
-  padding: 8px 12px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  color: #eef2ff;
-  font-size: 13px;
-  font-weight: 700;
-  backdrop-filter: blur(10px);
-}
-
-.card {
-  border: 1px solid rgba(124, 58, 237, 0.16);
-  box-shadow:
-    0 18px 40px rgba(49, 46, 129, 0.10),
-    0 4px 12px rgba(37, 99, 235, 0.06);
-}
-
-.card h2 {
-  border-left: 5px solid #4f46e5;
-  padding-left: 12px;
-}
-
-button {
-  background: linear-gradient(135deg, #4f46e5, #2563eb);
-  box-shadow: 0 10px 22px rgba(79, 70, 229, 0.22);
-}
-
-button:hover {
-  background: linear-gradient(135deg, #312e81, #1d4ed8);
-  transform: translateY(-1px);
-}
-
-input:focus,
-select:focus,
-textarea:focus {
-  outline: none;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.16);
-}
-
-@media (max-width: 768px) {
-  .brand-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .app-header h1 {
-    font-size: 30px;
-  }
-
-  .app-logo {
-  width: 42px;
-  height: 42px;
-}
-  }
-}
-
-
-
-
-button {
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
-  transition:
-    transform 0.18s ease,
-    box-shadow 0.18s ease,
-    filter 0.18s ease;
-}
-
-button::before {
-  content: "";
-  position: absolute;
-  inset: -40%;
-  background:
-    radial-gradient(circle at center, rgba(255, 255, 255, 0.55), transparent 18%),
-    repeating-conic-gradient(
-      from 0deg,
-      rgba(219, 234, 254, 0.28) 0deg,
-      rgba(219, 234, 254, 0.28) 8deg,
-      transparent 8deg,
-      transparent 22deg
-    );
-  opacity: 0;
-  transform: scale(0.7) rotate(0deg);
-  transition:
-    opacity 0.22s ease,
-    transform 0.55s ease;
-  pointer-events: none;
-  z-index: -1;
-}
-
+button::before,
 button::after {
-  content: "";
-  position: absolute;
-  top: -60%;
-  left: -40%;
-  width: 40%;
-  height: 220%;
-  background: linear-gradient(
-    120deg,
-    transparent,
-    rgba(255, 255, 255, 0.45),
-    transparent
-  );
-  transform: translateX(-160%) rotate(18deg);
-  transition: transform 0.55s ease;
-  pointer-events: none;
-  z-index: 0;
-}
-
-button:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.08);
-  box-shadow:
-    0 0 0 1px rgba(191, 219, 254, 0.75),
-    0 0 18px rgba(96, 165, 250, 0.65),
-    0 0 34px rgba(139, 92, 246, 0.45),
-    0 14px 30px rgba(49, 46, 129, 0.28);
-}
-
-button:hover::before {
-  opacity: 1;
-  transform: scale(1.15) rotate(18deg);
-}
-
-button:hover::after {
-  transform: translateX(360%) rotate(18deg);
-}
-
-button:active {
-  transform: translateY(0);
-  box-shadow:
-    0 0 0 1px rgba(191, 219, 254, 0.65),
-    0 0 12px rgba(96, 165, 250, 0.45);
+  content: none !important;
+  display: none !important;
 }
 
 button:focus-visible {
-  outline: none;
-  box-shadow:
-    0 0 0 4px rgba(191, 219, 254, 0.9),
-    0 0 24px rgba(139, 92, 246, 0.55);
+  outline: 3px solid rgba(63,81,232,.25);
+  outline-offset: 2px;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  button,
-  button::before,
-  button::after {
-    transition: none;
-  }
-
-  button:hover {
-    transform: none;
-  }
+.secondary-btn {
+  background: #556077;
 }
 
-/* Force small logo at top-left corner */
-.app-header {
-  position: relative;
-  min-height: 220px;
-  padding: 42px 28px 36px;
+.primary-btn {
+  background: var(--accent);
 }
 
-.brand-row {
-  display: block;
-  padding-left: 76px;
-  min-height: 56px;
+.study-toolbar {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
 }
 
-.app-logo {
-  position: absolute !important;
-  top: 20px !important;
-  left: 24px !important;
-
-  width: 52px !important;
-  height: 52px !important;
-  max-width: 52px !important;
-  max-height: 52px !important;
-
-  object-fit: contain !important;
-  border-radius: 12px;
-  padding: 5px;
-
-  background: rgba(255, 255, 255, 0.16);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.25);
-  backdrop-filter: blur(10px);
+.image-progress {
+  font-size: 18px;
+  font-weight: 800;
 }
 
-@media (max-width: 768px) {
-  .brand-row {
-    padding-left: 62px;
-  }
-
-  .app-logo {
-    width: 42px !important;
-    height: 42px !important;
-    max-width: 42px !important;
-    max-height: 42px !important;
-    top: 18px !important;
-    left: 18px !important;
-  }
-}
-
-
-/* Comfortable radiograph viewer size - force override */
-.viewer-box {
-  width: 100% !important;
-  max-width: 100% !important;
-  overflow: hidden !important;
-  border: 1px solid #c4b5fd;
-  border-radius: 16px;
-  padding: 14px;
-  background: #faf5ff;
-}
-
-#radiographImage {
-  display: block !important;
-
-  width: auto !important;
-  height: auto !important;
-
-  max-width: 100% !important;
-  max-height: 460px !important;
-
-  object-fit: contain !important;
-  margin: 12px auto !important;
-
-  border-radius: 12px;
-  border: 1px solid #cbd5e1;
-  background: #020617;
-}
-
-.card {
-  overflow: hidden !important;
-}
-
-.container {
-  max-width: 1050px !important;
-}
-
-.button-row {
-  max-width: 100% !important;
+.subtle-text {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 4px;
 }
 
 .progress-dashboard {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin: 12px 0;
+  grid-template-columns: repeat(3, minmax(110px, 1fr));
+  gap: 8px;
+  min-width: 410px;
 }
 
-.progress-dashboard div {
-  background: linear-gradient(135deg, #eef2ff, #dbeafe);
-  border: 1px solid #c4b5fd;
-  border-radius: 14px;
-  padding: 12px;
+.progress-dashboard > div {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 9px 12px;
   text-align: center;
+  background: #f8f8ff;
 }
 
-.progress-label {
+.progress-dashboard span {
   display: block;
-  color: #64748b;
   font-size: 12px;
-  margin-bottom: 4px;
+  color: var(--muted);
 }
 
 .progress-dashboard strong {
-  color: #312e81;
-  font-size: 18px;
+  display: block;
+  margin-top: 3px;
+}
+
+.diagnostic-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(430px, .75fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.radiograph-panel {
+  position: sticky;
+  top: 14px;
+  align-self: start;
+}
+
+.radiograph-display-container {
+  position: relative;
+  width: 100%;
+  min-height: 420px;
+  height: min(67vh, 720px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  border: 1px solid #7b74dc;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.radiograph-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  background: #000;
+
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+  filter: none !important;
+  box-shadow: none !important;
+}
+
+.radiograph-loading {
+  position: absolute;
+  z-index: 2;
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
+}
+
+.radiograph-error {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid #e6a7a1;
+  background: #fff3f2;
+  color: var(--danger);
+  border-radius: 10px;
+  white-space: pre-line;
+}
+
+.compact-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.assessment-panel {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+  background: #fbfbff;
+}
+
+.assessment-panel > h2 {
+  margin-top: 0;
+}
+
+.field-block {
+  margin-bottom: 14px;
+}
+
+.field-block label {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.tooth-card {
+  background: #fff;
+  border: 1px solid #dfe1ee;
+  border-radius: 14px;
+  padding: 15px;
+  margin: 14px 0;
+}
+
+.tooth-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.tooth-heading h3 {
+  margin: 0;
+}
+
+.tooth-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #eceefa;
+  color: #4e5672;
+}
+
+.tooth-badge.impacted {
+  background: #fff0d7;
+  color: #8a5a00;
+}
+
+.tooth-badge.nonimpacted {
+  background: #e7f7f1;
+  color: #12694f;
+}
+
+.tooth-badge.unknown {
+  background: #f0f0f3;
+  color: #61616d;
+}
+
+.tooth-details {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed #d9dbe7;
+}
+
+.ian-fieldset {
+  border: 1px solid #cfd2e0;
+  border-radius: 12px;
+  padding: 12px;
+  margin: 4px 0 14px;
+}
+
+.ian-fieldset legend {
+  padding: 0 6px;
+}
+
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.checkbox-grid label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.checkbox-grid input[type="checkbox"] {
+  width: auto;
+  margin-top: 2px;
+}
+
+.exclusive-option {
+  font-weight: 700 !important;
+}
+
+.workflow-panel {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #dfe1ee;
+}
+
+.workflow-panel h3 {
+  margin: 0 0 10px;
+}
+
+.workflow-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+
+.navigation-panel {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
 }
 
 .jump-row {
   display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 10px;
-  margin: 12px 0;
+  grid-template-columns: 1fr 160px;
+  gap: 8px;
+  margin-bottom: 9px;
 }
 
-#currentSaveStatus.saved {
-  color: #166534;
+.nav-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
 }
 
-#currentSaveStatus.unsaved {
-  color: #be123c;
+.saved {
+  color: var(--success);
 }
 
-@media (max-width: 768px) {
-  .progress-dashboard {
-    grid-template-columns: 1fr;
-  }
-
-  .jump-row {
-    grid-template-columns: 1fr;
-  }
+.unsaved {
+  color: var(--warning);
 }
-.action-grid {
-  grid-template-columns: repeat(2, 1fr);
-}
-
-#saveNextBtn {
-  background: linear-gradient(135deg, #7c3aed, #2563eb);
-}
-
-#nextUnsavedBtn {
-  background: linear-gradient(135deg, #0f766e, #2563eb);
-}
-
-@media (max-width: 768px) {
-  .action-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-.workflow-panel {
-  margin-top: 16px;
-  padding: 14px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #eef2ff, #eff6ff);
-  border: 1px solid #c4b5fd;
-}
-
-.workflow-panel h3 {
-  margin: 0 0 12px;
-  color: #312e81;
-  font-size: 16px;
-}
-
-.data-tools {
-  margin-top: 12px;
-  padding: 12px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid #dbeafe;
-}
-
-.data-tools summary {
-  cursor: pointer;
-  font-weight: bold;
-  color: #312e81;
-  margin-bottom: 10px;
-}
-
-.data-tools .button-row {
-  margin-top: 12px;
-}
-
-.danger-button {
-  background: linear-gradient(135deg, #be123c, #7f1d1d) !important;
-}
-
-.danger-button:hover {
-  background: linear-gradient(135deg, #9f1239, #450a0a) !important;
-}
-
-/* Final radiograph viewer fix */
-#radiographImage {
-  display: none !important;
-  width: auto !important;
-  height: auto !important;
-  max-width: 100% !important;
-  max-height: 460px !important;
-  object-fit: contain !important;
-  margin: 14px auto !important;
-  border-radius: 12px;
-  border: 1px solid #cbd5e1;
-  background: #020617;
-}
-
-#radiographImage.has-image {
-  display: block !important;
-}
-
-.viewer-box {
-  overflow: hidden !important;
-}
-
-#imageProgress {
-  font-weight: bold;
-  color: #312e81;
-}
-
-#clearDataBtn,
-#importBackupBtn,
-#backupFileInput,
-#jsStatus {
-  display: none !important;
-}
-#clearDataBtn,
-#importBackupBtn,
-#backupFileInput,
-#jsStatus {
-  display: none !important;
-}
-/* =========================================================
-   PARTICIPANT INSTRUCTIONS
-   ========================================================= */
-
-.participant-instruction-card {
-  margin: 28px 0;
-  padding: 26px 30px;
-  background: #ffffff;
-  border: 1px solid rgba(92, 74, 180, 0.18);
-  border-radius: 18px;
-  box-shadow: 0 8px 28px rgba(35, 28, 90, 0.08);
-}
-
-.participant-instruction-card h2 {
-  margin-top: 0;
-  margin-bottom: 12px;
-}
-
-.participant-instruction-card > p {
-  color: #555;
-  line-height: 1.7;
-}
-
-.participant-instruction-list {
-  padding-left: 24px;
-  line-height: 1.75;
-}
-
-.participant-instruction-list li {
-  margin-bottom: 11px;
-}
-
-.participant-important-note {
-  margin-top: 20px;
-  padding: 15px 18px;
-  border-radius: 12px;
-  background: rgba(105, 86, 210, 0.08);
-  line-height: 1.65;
-}
-
-
-/* =========================================================
-   STUDY COMPLETION SCREEN
-   ========================================================= */
 
 .study-completion-overlay {
   position: fixed;
   inset: 0;
-  z-index: 999999;
-
+  z-index: 100000;
   display: none;
-
   align-items: center;
   justify-content: center;
-
-  padding: 24px;
-
-  background: rgba(15, 16, 35, 0.84);
-
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  padding: 22px;
+  background: rgba(12,14,35,.86);
 }
 
 .study-completion-overlay.show {
@@ -689,317 +447,30 @@ button:focus-visible {
 }
 
 .study-completion-card {
-  width: min(540px, 100%);
-
-  padding: 38px 34px;
-
+  width: min(520px, 100%);
+  background: #fff;
+  border-radius: 20px;
+  padding: 34px;
   text-align: center;
-
-  background: #ffffff;
-
-  border-radius: 24px;
-
-  box-shadow:
-    0 30px 90px rgba(0, 0, 0, 0.28);
 }
 
 .completion-icon {
-  width: 76px;
-  height: 76px;
-
-  margin: 0 auto 18px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
+  width: 70px;
+  height: 70px;
   border-radius: 50%;
-
-  font-size: 42px;
-  font-weight: 700;
-
-  background:
-    rgba(91, 74, 190, 0.10);
-}
-
-.study-completion-card h1 {
-  margin: 0 0 14px;
-}
-
-.completion-main-text,
-.completion-thank-you {
-  line-height: 1.7;
-  color: #555;
-}
-
-.completion-number {
-  margin: 24px 0;
-
-  font-size: 42px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 16px;
+  background: #eef0ff;
+  font-size: 38px;
   font-weight: 800;
 }
 
-.completion-close-btn {
-  margin-top: 20px;
-
-  padding: 12px 24px;
-
-  border: none;
-  border-radius: 10px;
-
-  cursor: pointer;
-
-  font-size: 16px;
-  font-weight: 700;
+.completion-number {
+  font-size: 38px;
+  font-weight: 800;
+  margin: 18px 0;
 }
-/* =========================================================
-   PANORAMIC RADIOGRAPH VIEWER
-   ========================================================= */
-
-.radiograph-display-container {
-  position: relative;
-
-  width: 100%;
-  min-height: 420px;
-
-  margin: 18px 0 22px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  overflow: hidden;
-
-  background: #050505;
-
-  border: 1px solid rgba(110, 86, 255, 0.35);
-  border-radius: 16px;
-
-  box-shadow:
-    inset 0 0 30px rgba(0, 0, 0, 0.35),
-    0 8px 24px rgba(33, 25, 85, 0.08);
-}
-
-
-.radiograph-image {
-  display: block;
-
-  width: 100%;
-  max-width: 100%;
-
-  height: auto;
-  max-height: 720px;
-
-  object-fit: contain;
-
-  margin: 0 auto;
-
-  background: #000;
-
-  user-select: none;
-  -webkit-user-drag: none;
-}
-
-
-.radiograph-image:not([src]) {
-  visibility: hidden;
-}
-
-
-.radiograph-image.has-image {
-  visibility: visible;
-}
-
-
-.radiograph-loading {
-  position: absolute;
-
-  left: 50%;
-  top: 50%;
-
-  transform: translate(-50%, -50%);
-
-  color: #eeeeee;
-
-  font-size: 14px;
-  font-weight: 600;
-
-  pointer-events: none;
-}
-
-
-.radiograph-image.has-image + .radiograph-loading {
-  display: none;
-}
-
-
-/* =========================================================
-   DIAGNOSTIC-SAFE UI
-   Remove mouse particles / hover motion / visual distractions
-   Does NOT affect button click functions or Supabase
-   ========================================================= */
-
-
-/* Keep all buttons clickable, but remove motion effects */
-button,
-button:hover,
-button:focus,
-button:active,
-.button-row button,
-.button-row button:hover,
-.button-row button:focus,
-.button-row button:active,
-.workflow-panel button,
-.workflow-panel button:hover,
-.workflow-panel button:focus,
-.workflow-panel button:active {
-
-  /* IMPORTANT: keep buttons functional */
-  pointer-events: auto !important;
-  cursor: pointer !important;
-
-  /* Remove movement */
-  transform: none !important;
-
-  /* Remove animation */
-  animation: none !important;
-
-  /* Remove animated visual effects */
-  filter: none !important;
-
-  /* Remove glowing/shimmering shadows */
-  box-shadow: none !important;
-
-  /* Prevent hover movement */
-  translate: none !important;
-  scale: 1 !important;
-  rotate: 0deg !important;
-}
-
-
-/* =========================================================
-   REMOVE PARTICLES CREATED BY ::before / ::after
-   ========================================================= */
-
-button::before,
-button::after,
-.button-row button::before,
-.button-row button::after,
-.workflow-panel button::before,
-.workflow-panel button::after {
-
-  content: none !important;
-
-  display: none !important;
-
-  opacity: 0 !important;
-
-  visibility: hidden !important;
-
-  animation: none !important;
-
-  transform: none !important;
-
-  box-shadow: none !important;
-
-}
-
-
-/* =========================================================
-   KEEP RADIOGRAPH VIEWER COMPLETELY STATIC
-   ========================================================= */
-
-#radiographImage,
-#radiographImage:hover,
-#radiographImage:focus,
-.radiograph-display-container,
-.radiograph-display-container:hover {
-
-  animation: none !important;
-
-  transition: none !important;
-
-  transform: none !important;
-
-  filter: none !important;
-
-  box-shadow: none !important;
-
-}
-
-
-/* Prevent accidental visual overlays over radiograph */
-#radiographImage::before,
-#radiographImage::after,
-.radiograph-display-container::before,
-.radiograph-display-container::after {
-
-  content: none !important;
-
-  display: none !important;
-
-}
-
-
-/* =========================================================
-   STATIC BUTTON HOVER
-   Keep a simple visual indication only
-   ========================================================= */
-
-button:hover {
-
-  transform: none !important;
-
-  animation: none !important;
-
-  filter: none !important;
-
-}
-
-
-/* Keyboard focus remains visible for accessibility */
-button:focus-visible {
-
-  outline: 3px solid rgba(68, 88, 240, 0.45) !important;
-
-  outline-offset: 2px !important;
-
-}
-
-
-/* =========================================================
-   COMMON PARTICLE CLASSES
-   Hide them if old CSS/JS still creates them
-   ========================================================= */
-
-.particle,
-.particles,
-.mouse-particle,
-.cursor-particle,
-.cursor-trail,
-.trail-particle,
-.spark,
-.sparkle,
-.button-particle,
-.hover-particle,
-.glow-particle {
-
-  display: none !important;
-
-  visibility: hidden !important;
-
-  opacity: 0 !important;
-
-  pointer-events: none !important;
-
-  animation: none !important;
-
-}
-
-
-/* =========================================================
-   HARD DISABLE ALL CURSOR / PARTICLE VISUAL EFFECTS
-   ========================================================= */
 
 [class*="particle"],
 [id*="particle"],
@@ -1007,95 +478,71 @@ button:focus-visible {
 [id*="spark"],
 [class*="trail"],
 [id*="trail"],
-[class*="cursor-effect"],
-[id*="cursor-effect"],
 [class*="cursor-glow"],
 [id*="cursor-glow"],
 [class*="mouse-effect"],
 [id*="mouse-effect"],
-[class*="mouse-glow"],
-[id*="mouse-glow"],
-[class*="ripple"],
-[id*="ripple"],
 [class*="burst"],
 [id*="burst"],
-[class*="starburst"],
-[id*="starburst"] {
+[class*="ripple"],
+[id*="ripple"] {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
-  animation: none !important;
-  transition: none !important;
   pointer-events: none !important;
-}
-
-
-/* Remove all button pseudo visual effects */
-
-button::before,
-button::after,
-button:hover::before,
-button:hover::after,
-button:focus::before,
-button:focus::after,
-button:active::before,
-button:active::after {
-  content: none !important;
-  display: none !important;
-  opacity: 0 !important;
-  visibility: hidden !important;
   animation: none !important;
-  transition: none !important;
-  transform: none !important;
-  box-shadow: none !important;
-  filter: none !important;
 }
 
+@media (max-width: 1050px) {
+  .diagnostic-layout {
+    grid-template-columns: 1fr;
+  }
 
-/* Completely static buttons */
+  .radiograph-panel {
+    position: static;
+  }
 
-button,
-button:hover,
-button:focus,
-button:active {
-  animation: none !important;
-  transform: none !important;
-  translate: none !important;
-  scale: 1 !important;
-  rotate: 0deg !important;
-  filter: none !important;
+  .radiograph-display-container {
+    height: min(60vh, 650px);
+  }
+
+  .progress-dashboard {
+    min-width: 0;
+  }
 }
 
+@media (max-width: 720px) {
+  .container {
+    padding: 0 10px;
+  }
 
-/* Keep radiograph area completely static */
+  .card,
+  .participant-instruction-card {
+    padding: 16px;
+  }
 
-.radiograph-display-container,
-.radiograph-display-container:hover,
-#radiographImage,
-#radiographImage:hover {
-  animation: none !important;
-  transition: none !important;
-  transform: none !important;
-  filter: none !important;
-}
+  .form-grid,
+  .two-col,
+  .workflow-buttons,
+  .nav-buttons {
+    grid-template-columns: 1fr;
+  }
 
+  .study-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
 
-/* No decorative overlay over viewer */
+  .progress-dashboard {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
 
-.radiograph-display-container::before,
-.radiograph-display-container::after {
-  content: none !important;
-  display: none !important;
-}
+  .jump-row {
+    grid-template-columns: 1fr;
+  }
 
-
-/* Keep normal usable cursor */
-
-button {
-  cursor: pointer !important;
-}
-
-#radiographImage,
-.radiograph-display-container {
-  cursor: default !important;
+  .radiograph-display-container {
+    min-height: 300px;
+    height: 48vh;
+  }
 }
