@@ -831,3 +831,167 @@ button:focus-visible {
 .radiograph-image.has-image + .radiograph-loading {
   display: none;
 }
+
+
+/* =========================================================
+   DIAGNOSTIC-SAFE UI
+   Remove mouse particles / hover motion / visual distractions
+   Does NOT affect button click functions or Supabase
+   ========================================================= */
+
+
+/* Keep all buttons clickable, but remove motion effects */
+button,
+button:hover,
+button:focus,
+button:active,
+.button-row button,
+.button-row button:hover,
+.button-row button:focus,
+.button-row button:active,
+.workflow-panel button,
+.workflow-panel button:hover,
+.workflow-panel button:focus,
+.workflow-panel button:active {
+
+  /* IMPORTANT: keep buttons functional */
+  pointer-events: auto !important;
+  cursor: pointer !important;
+
+  /* Remove movement */
+  transform: none !important;
+
+  /* Remove animation */
+  animation: none !important;
+
+  /* Remove animated visual effects */
+  filter: none !important;
+
+  /* Remove glowing/shimmering shadows */
+  box-shadow: none !important;
+
+  /* Prevent hover movement */
+  translate: none !important;
+  scale: 1 !important;
+  rotate: 0deg !important;
+}
+
+
+/* =========================================================
+   REMOVE PARTICLES CREATED BY ::before / ::after
+   ========================================================= */
+
+button::before,
+button::after,
+.button-row button::before,
+.button-row button::after,
+.workflow-panel button::before,
+.workflow-panel button::after {
+
+  content: none !important;
+
+  display: none !important;
+
+  opacity: 0 !important;
+
+  visibility: hidden !important;
+
+  animation: none !important;
+
+  transform: none !important;
+
+  box-shadow: none !important;
+
+}
+
+
+/* =========================================================
+   KEEP RADIOGRAPH VIEWER COMPLETELY STATIC
+   ========================================================= */
+
+#radiographImage,
+#radiographImage:hover,
+#radiographImage:focus,
+.radiograph-display-container,
+.radiograph-display-container:hover {
+
+  animation: none !important;
+
+  transition: none !important;
+
+  transform: none !important;
+
+  filter: none !important;
+
+  box-shadow: none !important;
+
+}
+
+
+/* Prevent accidental visual overlays over radiograph */
+#radiographImage::before,
+#radiographImage::after,
+.radiograph-display-container::before,
+.radiograph-display-container::after {
+
+  content: none !important;
+
+  display: none !important;
+
+}
+
+
+/* =========================================================
+   STATIC BUTTON HOVER
+   Keep a simple visual indication only
+   ========================================================= */
+
+button:hover {
+
+  transform: none !important;
+
+  animation: none !important;
+
+  filter: none !important;
+
+}
+
+
+/* Keyboard focus remains visible for accessibility */
+button:focus-visible {
+
+  outline: 3px solid rgba(68, 88, 240, 0.45) !important;
+
+  outline-offset: 2px !important;
+
+}
+
+
+/* =========================================================
+   COMMON PARTICLE CLASSES
+   Hide them if old CSS/JS still creates them
+   ========================================================= */
+
+.particle,
+.particles,
+.mouse-particle,
+.cursor-particle,
+.cursor-trail,
+.trail-particle,
+.spark,
+.sparkle,
+.button-particle,
+.hover-particle,
+.glow-particle {
+
+  display: none !important;
+
+  visibility: hidden !important;
+
+  opacity: 0 !important;
+
+  pointer-events: none !important;
+
+  animation: none !important;
+
+}
