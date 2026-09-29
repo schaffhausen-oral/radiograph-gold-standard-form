@@ -995,3 +995,107 @@ button:focus-visible {
   animation: none !important;
 
 }
+
+
+/* =========================================================
+   HARD DISABLE ALL CURSOR / PARTICLE VISUAL EFFECTS
+   ========================================================= */
+
+[class*="particle"],
+[id*="particle"],
+[class*="spark"],
+[id*="spark"],
+[class*="trail"],
+[id*="trail"],
+[class*="cursor-effect"],
+[id*="cursor-effect"],
+[class*="cursor-glow"],
+[id*="cursor-glow"],
+[class*="mouse-effect"],
+[id*="mouse-effect"],
+[class*="mouse-glow"],
+[id*="mouse-glow"],
+[class*="ripple"],
+[id*="ripple"],
+[class*="burst"],
+[id*="burst"],
+[class*="starburst"],
+[id*="starburst"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  animation: none !important;
+  transition: none !important;
+  pointer-events: none !important;
+}
+
+
+/* Remove all button pseudo visual effects */
+
+button::before,
+button::after,
+button:hover::before,
+button:hover::after,
+button:focus::before,
+button:focus::after,
+button:active::before,
+button:active::after {
+  content: none !important;
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+
+/* Completely static buttons */
+
+button,
+button:hover,
+button:focus,
+button:active {
+  animation: none !important;
+  transform: none !important;
+  translate: none !important;
+  scale: 1 !important;
+  rotate: 0deg !important;
+  filter: none !important;
+}
+
+
+/* Keep radiograph area completely static */
+
+.radiograph-display-container,
+.radiograph-display-container:hover,
+#radiographImage,
+#radiographImage:hover {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+
+/* No decorative overlay over viewer */
+
+.radiograph-display-container::before,
+.radiograph-display-container::after {
+  content: none !important;
+  display: none !important;
+}
+
+
+/* Keep normal usable cursor */
+
+button {
+  cursor: pointer !important;
+}
+
+#radiographImage,
+.radiograph-display-container {
+  cursor: default !important;
+}
