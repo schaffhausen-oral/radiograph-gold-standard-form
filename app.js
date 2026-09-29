@@ -3509,3 +3509,142 @@ function isDicomFile(arrayBuffer) {
     bytes[131] === 0x4d
   );
 }
+
+/* =========================================================
+   REMOVE CURSOR PARTICLE / SPARK / TRAIL EFFECTS
+   Diagnostic-safe mode
+   ========================================================= */
+
+(function disableDiagnosticParticleEffects() {
+
+  const EFFECT_KEYWORDS = [
+    "particle",
+    "spark",
+    "trail",
+    "cursor-effect",
+    "cursor-glow",
+    "mouse-effect",
+    "mouse-glow",
+    "ripple",
+    "burst",
+    "starburst"
+  ];
+
+
+  function isVisualEffectElement(element) {
+
+    if (!element || element.nodeType !== 1) {
+      return false;
+    }
+
+    const className =
+      typeof element.className === "string"
+        ? element.className.toLowerCase()
+        : "";
+
+    const id =
+      typeof element.id === "string"
+        ? element.id.toLowerCase()
+        : "";
+
+    return EFFECT_KEYWORDS.some(function (keyword) {
+
+      return (
+        className.includes(keyword) ||
+        id.includes(keyword)
+      );
+
+    });
+
+  }
+
+
+  function removeExistingEffects() {
+
+    document
+      .querySelectorAll("*")
+      .forEach(function (element) {
+
+        if (isVisualEffectElement(element)) {
+
+          element.remove();
+
+        }
+
+      });
+
+  }
+
+
+  /* Remove effects already present */
+
+  removeExistingEffects();
+
+
+  /* Remove effects immediately if old code creates them again */
+
+  const observer =
+    new MutationObserver(function (mutations) {
+
+      mutations.forEach(function (mutation) {
+
+        mutation.addedNodes.forEach(function (node) {
+
+          if (
+            node.nodeType !== 1
+          ) {
+            return;
+          }
+
+
+          if (
+            isVisualEffectElement(node)
+          ) {
+
+            node.remove();
+
+            return;
+          }
+
+
+          if (
+            node.querySelectorAll
+          ) {
+
+            node
+              .querySelectorAll("*")
+              .forEach(function (child) {
+
+                if (
+                  isVisualEffectElement(child)
+                ) {
+
+                  child.remove();
+
+                }
+
+              });
+
+          }
+
+        });
+
+      });
+
+    });
+
+
+  observer.observe(
+    document.documentElement,
+    {
+      childList: true,
+      subtree: true
+    }
+  );
+
+
+  console.log(
+    "Diagnostic-safe particle suppression enabled."
+  );
+
+})();
